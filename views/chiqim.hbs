@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Chiqim</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-2xl font-semibold mb-6 text-center tracking-tight">Chiqim (Tikilgan ishlar)</h1>
+
+  <div class="ios-card p-6 mb-8">
+    <form id="expenseForm" class="space-y-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1.5">Band (1–18)</label>
+          <select id="bandSelect" required class="w-full bg-gray-100 rounded-xl px-4 py-3">
+            <option value="">Band tanlang</option>
+            <option value="1-band">1-band</option><option value="2-band">2-band</option><option value="3-band">3-band</option>
+            <option value="4-band">4-band</option><option value="5-band">5-band</option><option value="6-band">6-band</option>
+            <option value="7-band">7-band</option><option value="8-band">8-band</option><option value="9-band">9-band</option>
+            <option value="10-band">10-band</option><option value="11-band">11-band</option><option value="12-band">12-band</option>
+            <option value="13-band">13-band</option><option value="14-band">14-band</option><option value="15-band">15-band</option>
+            <option value="16-band">16-band</option><option value="17-band">17-band</option><option value="18-band">18-band</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1.5">Model (avtomatik to‘ldirish)</label>
+          <input type="text" id="modelSearch" class="w-full bg-gray-100 rounded-xl px-4 py-3" placeholder="Model nomi, variant yoki zakaz raqami yozing" autocomplete="off">
+          <div id="modelSuggestions" class="absolute z-10 bg-white shadow-lg rounded-xl mt-1 max-h-48 overflow-auto hidden w-full"></div>
+          <input type="hidden" id="selectedProductId">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1.5">Tikilgan miqdor (dona)</label>
+          <input type="number" id="sewnQty" required min="1" class="w-full bg-gray-100 rounded-xl px-4 py-3">
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="w-full bg-[#007AFF] hover:bg-blue-600 text-white font-semibold rounded-xl py-3 transition-colors">Chiqimni saqlash</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="ios-card p-6 mb-6">
+    <div class="mb-4"><input type="text" id="searchInput" class="w-full bg-gray-100 rounded-xl px-4 py-3" placeholder="Model, variant yoki zakaz raqami bo‘yicha qidirish"></div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead><tr class="bg-gray-50 text-gray-500 text-xs uppercase"><th class="px-4 py-3">Band</th><th>Model</th><th>Variant</th><th>Zakaz #</th><th>Miqdor</th><th>Sana</th><th class="text-right">Amallar</th> </tr></thead>
+        <tbody id="expenseTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ios-card p-5">
+    <h3 class="font-semibold text-lg mb-3">Bandlar bo‘yicha jami tikilgan</h3>
+    <div id="bandTotals" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2"></div>
+  </div>
+</div>
+
+<script>
+  let incomingProducts = [];
+  let expenses = [];
+  let editExpenseId = null;
+
+  async function loadIncoming() {
+    const res = await fetch('/api/incoming');
+    incomingProducts = await res.json();
+  }
+
+  async function loadExpenses() {
+    const res = await fetch('/api/expenses');
+    expenses = await res.json();
+    renderExpenses();
+    renderBandTotals();
+  }
+
+  async function saveExpense(expenseData) {
+    if (editExpenseId !== null) {
+      await fetch(`/api/expenses/${editExpenseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(expenseData)
+      });
+    } else {
+      await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(expenseData)
+      });
+    }
+    loadExpenses();
+  }
+
+  async function deleteExpense(id) {
+    if (!confirm("Ushbu chiqimni o‘chirilsinmi?")) return;
+    await fetch(`/api/expenses/${id}`, { method: 'DELETE' });
+    loadExpenses();
+  }
+
+  function editExpense(id) {
+    const exp = expenses.find(e => e._id === id);
+    if (!exp) return;
+    document.getElementById('bandSelect').value = exp.band;
+    document.getElementById('sewnQty').value = exp.quantity;
+    document.getElementById('modelSearch').value = `${exp.modelName} (${exp.variant}) - ${exp.orderNumber}`;
+    document.getElementById('selectedProductId').value = '';
+    editExpenseId = id;
+    document.querySelector('button[type="submit"]').textContent = "Yangilash";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderExpenses() {
+    const tbody = document.getElementById('expenseTableBody');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = expenses;
+    if (searchTerm) filtered = expenses.filter(e => e.modelName.toLowerCase().includes(searchTerm) || e.variant.toLowerCase().includes(searchTerm) || e.orderNumber.toLowerCase().includes(searchTerm));
+    tbody.innerHTML = '';
+    if (!filtered.length) {
+      tbody.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-400">Hech qanday chiqim yo‘q</tr>`;
+      return;
+    }
+    filtered.forEach(exp => {
+      const tr = document.createElement('tr');
+      tr.className = "border-b border-gray-100 hover:bg-gray-50";
+      tr.innerHTML = `
+        <td class="px-4 py-3">${exp.band}</td>
+        <td class="px-4 py-3 font-medium">${escapeHtml(exp.modelName)}</td>
+        <td class="px-4 py-3">${escapeHtml(exp.variant) || '-'}</td>
+        <td class="px-4 py-3">${escapeHtml(exp.orderNumber) || '-'}</td>
+        <td class="px-4 py-3">${exp.quantity} dona</td>
+        <td class="px-4 py-3 text-xs text-gray-500">${new Date(exp.date).toLocaleString()}</td>
+        <td class="px-4 py-3 text-right space-x-2"><button onclick="editExpense('${exp._id}')" class="text-blue-600 text-sm">Tahrir</button><button onclick="deleteExpense('${exp._id}')" class="text-red-600 text-sm">O‘chir</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderBandTotals() {
+    const totals = {};
+    expenses.forEach(e => { totals[e.band] = (totals[e.band] || 0) + e.quantity; });
+    const container = document.getElementById('bandTotals');
+    container.innerHTML = '';
+    const bands = ["1-band","2-band","3-band","4-band","5-band","6-band","7-band","8-band","9-band","10-band","11-band","12-band","13-band","14-band","15-band","16-band","17-band","18-band"];
+    bands.forEach(b => {
+      const qty = totals[b] || 0;
+      const div = document.createElement('div');
+      div.className = "bg-gray-50 p-2 rounded-lg text-center";
+      div.innerHTML = `<div class="text-xs text-gray-500">${b}</div><div class="text-lg font-bold text-indigo-600">${qty}</div>`;
+      container.appendChild(div);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  const modelSearch = document.getElementById('modelSearch');
+  const suggestionsDiv = document.getElementById('modelSuggestions');
+  const selectedProductId = document.getElementById('selectedProductId');
+
+  function updateSuggestions() {
+    const query = modelSearch.value.toLowerCase().trim();
+    if (!query) { suggestionsDiv.classList.add('hidden'); return; }
+    const filtered = incomingProducts.filter(p => p.modelName.toLowerCase().includes(query) || p.variant.toLowerCase().includes(query) || p.orderNumber.toLowerCase().includes(query));
+    if (filtered.length === 0) { suggestionsDiv.classList.add('hidden'); return; }
+    suggestionsDiv.innerHTML = '';
+    filtered.forEach(p => {
+      const div = document.createElement('div');
+      div.className = "px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100";
+      div.innerHTML = `<div class="font-medium">${escapeHtml(p.modelName)} (${escapeHtml(p.variant)})</div><div class="text-xs text-gray-500">Zakaz: ${escapeHtml(p.orderNumber)}</div>`;
+      div.onclick = () => {
+        modelSearch.value = `${p.modelName} (${p.variant}) - ${p.orderNumber}`;
+        selectedProductId.value = p._id;
+        suggestionsDiv.classList.add('hidden');
+      };
+      suggestionsDiv.appendChild(div);
+    });
+    suggestionsDiv.classList.remove('hidden');
+  }
+  modelSearch.addEventListener('input', updateSuggestions);
+  document.addEventListener('click', (e) => { if (!suggestionsDiv.contains(e.target) && e.target !== modelSearch) suggestionsDiv.classList.add('hidden'); });
+
+  document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const band = document.getElementById('bandSelect').value;
+    if (!band) { alert("Band tanlang!"); return; }
+    const qty = parseInt(document.getElementById('sewnQty').value);
+    if (isNaN(qty) || qty <= 0) { alert("Miqdorni to‘g‘ri kiriting!"); return; }
+    let productId = selectedProductId.value;
+    let modelName = '', variant = '', orderNumber = '';
+    if (productId) {
+      const prod = incomingProducts.find(p => p._id === productId);
+      if (prod) { modelName = prod.modelName; variant = prod.variant; orderNumber = prod.orderNumber; }
+    } else {
+      const txt = modelSearch.value;
+      modelName = txt.split('(')[0].trim() || txt;
+      variant = '';
+      orderNumber = '';
+    }
+    await saveExpense({ band, modelName, variant, orderNumber, quantity: qty });
+    document.getElementById('expenseForm').reset();
+    selectedProductId.value = '';
+    modelSearch.value = '';
+    editExpenseId = null;
+    document.querySelector('button[type="submit"]').textContent = "Chiqimni saqlash";
+  });
+
+  document.getElementById('searchInput').addEventListener('input', () => renderExpenses());
+
+  loadIncoming();
+  loadExpenses();
+  window.editExpense = editExpense;
+  window.deleteExpense = deleteExpense;
+</script>
+</body>
+</html>

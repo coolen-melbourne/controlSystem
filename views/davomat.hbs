@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Davomat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .ios-input { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
+    .thumb-small { width: 40px; height: 40px; object-fit: cover; border-radius: 50%; background: #f3f4f6; }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-2xl font-semibold mb-6 text-center tracking-tight">📅 Davomat boshqaruvi</h1>
+
+  <div class="ios-card p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4">Kunlik davomat</h2>
+    <div id="todayStats" class="grid grid-cols-3 gap-3 mb-6 text-center">
+      <div class="bg-green-100 p-3 rounded-xl"><span class="block text-2xl font-bold" id="presentCount">0</span><span class="text-xs">Kelganlar</span></div>
+      <div class="bg-red-100 p-3 rounded-xl"><span class="block text-2xl font-bold" id="absentCount">0</span><span class="text-xs">Kelmaganlar</span></div>
+      <div class="bg-yellow-100 p-3 rounded-xl"><span class="block text-2xl font-bold" id="lateCount">0</span><span class="text-xs">Kech qolganlar</span></div>
+    </div>
+    <div class="mb-4">
+      <input type="text" id="searchStaff" placeholder="🔍 Xodim ismi bo‘yicha qidirish" class="ios-input w-full px-4 py-2 text-sm">
+    </div>
+    <div id="staffList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+  </div>
+
+  <div class="ios-card p-6">
+    <h2 class="text-lg font-semibold mb-4">📜 Davomat tarixi</h2>
+    <div id="attendanceHistory" class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead><tr class="bg-gray-50 text-gray-500 text-xs uppercase"><th class="px-4 py-3">Sana</th><th>Xodim</th><th>Kelish vaqti</th><th>Ketish vaqti</th><th>Kechikish (daq)</th><th>Qo'shimcha vaqt (daq)</th><th>Qo'shimcha kun</th><th>Qo'shimcha soat</th><th>Ishlagan vaqti</th> </tr></thead>
+        <tbody id="historyTableBody"></tbody>
+       </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  let staffList = [];
+  let attendanceRecords = [];
+
+  async function fetchStaff() {
+    const res = await fetch('/api/staff');
+    staffList = await res.json();
+    renderStaffList();
+  }
+
+  async function fetchAttendance() {
+    const res = await fetch('/api/attendance');
+    attendanceRecords = await res.json();
+    renderHistory();
+    updateTodayStats();
+  }
+
+  async function checkIn(employeeId) {
+    if (!employeeId) { alert("Xodim ID topilmadi!"); return; }
+    const today = new Date().toISOString().slice(0,10);
+    const now = new Date();
+    const existing = attendanceRecords.find(r => {
+      const empId = r.employeeId?._id || r.employeeId;
+      return empId?.toString() === employeeId.toString() && r.date === today;
+    });
+    if (existing && existing.checkIn) { alert("Bugun allaqachon kelish qayd etilgan"); return; }
+    const startHour = 8, startMinute = 0;
+    let lateMinutes = 0;
+    const checkInHour = now.getHours();
+    const checkInMinute = now.getMinutes();
+    if (checkInHour > startHour || (checkInHour === startHour && checkInMinute > startMinute)) {
+      lateMinutes = (checkInHour - startHour) * 60 + (checkInMinute - startMinute);
+    }
+    const payload = { employeeId, date: today, checkIn: now, lateMinutes };
+    try {
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchAttendance();
+    } catch (err) { console.error(err); alert("Kelishni qayd etishda xatolik: " + err.message); }
+  }
+
+  async function checkOut(employeeId) {
+    if (!employeeId) { alert("Xodim ID topilmadi!"); return; }
+    const today = new Date().toISOString().slice(0,10);
+    const existing = attendanceRecords.find(r => {
+      const empId = r.employeeId?._id || r.employeeId;
+      return empId?.toString() === employeeId.toString() && r.date === today;
+    });
+    if (!existing || !existing.checkIn) { alert("Avval kelish vaqtini qayd eting"); return; }
+    if (existing.checkOut) { alert("Bugun allaqachon ketish qayd etilgan"); return; }
+    const now = new Date();
+    try {
+      await fetch(`/api/attendance/${existing._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkOut: now })
+      });
+      await fetchAttendance();
+    } catch (err) { console.error(err); alert("Ketishni qayd etishda xatolik"); }
+  }
+
+  async function addExtraWork(employeeId) {
+    const today = new Date().toISOString().slice(0,10);
+    const existing = attendanceRecords.find(r => {
+      const empId = r.employeeId?._id || r.employeeId;
+      return empId?.toString() === employeeId.toString() && r.date === today;
+    });
+    if (!existing) { alert("Bugun hali kelish qayd etilmagan"); return; }
+    const minutes = prompt("Qancha qo‘shimcha ish (daqiqa)?", "30");
+    if (!minutes || isNaN(parseInt(minutes))) return;
+    try {
+      await fetch(`/api/attendance/${existing._id}/extra-work`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes: parseInt(minutes) })
+      });
+      await fetchAttendance();
+    } catch (err) { console.error(err); alert("Qo‘shimcha ishni qayd etishda xatolik"); }
+  }
+  async function addExtraWorkDay(employeeId) {
+    if (!employeeId) { alert("Xodim ID topilmadi!"); return; }
+    const days = prompt("Qancha qo'shimcha ish kuni qo'shish?", "1");
+    if (!days || isNaN(parseInt(days))) return;
+    try {
+      const res = await fetch(`/api/attendance/extra-days/${employeeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extraDays: parseInt(days) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchAttendance();
+      alert(`${days} qo'shimcha ish kuni qo'shildi`);
+    } catch (err) { console.error(err); alert("Qo'shimcha ish kunini qayd etishda xatolik: " + err.message); }
+  }
+
+  async function addExtraWorkHour(employeeId) {
+    if (!employeeId) { alert("Xodim ID topilmadi!"); return; }
+    const hours = prompt("Qancha qo'shimcha ish soati qo'shish?", "1");
+    if (!hours || isNaN(parseInt(hours))) return;
+    try {
+      const res = await fetch(`/api/attendance/extra-hours/${employeeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extraHours: parseInt(hours) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await fetchAttendance();
+      alert(`${hours} qo'shimcha ish soati qo'shildi`);
+    } catch (err) { console.error(err); alert("Qo'shimcha ish soatini qayd etishda xatolik: " + err.message); }
+  }
+  function renderStaffList() {
+    const container = document.getElementById('staffList');
+    const search = document.getElementById('searchStaff').value.toLowerCase();
+    const filtered = staffList.filter(s => s.fullName.toLowerCase().includes(search));
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="text-center text-gray-400 py-4">Xodim topilmadi</div>';
+      return;
+    }
+    container.innerHTML = '';
+    filtered.forEach(staff => {
+      const todayRecord = attendanceRecords.find(r => {
+        const empId = r.employeeId?._id || r.employeeId;
+        return empId?.toString() === staff._id.toString() && r.date === new Date().toISOString().slice(0,10);
+      });
+      const isCheckedIn = todayRecord && todayRecord.checkIn;
+      const isCheckedOut = todayRecord && todayRecord.checkOut;
+      const lateMinutes = todayRecord?.lateMinutes || 0;
+      const extraWork = todayRecord?.extraWorkMinutes || 0;
+      const workDuration = todayRecord?.workDurationMinutes || 0;
+      const workHours = Math.floor(workDuration / 60);
+      const workMins = workDuration % 60;
+
+      const photoHtml = staff.photo ? `<img src="${staff.photo}" class="thumb-small">` : `<div class="thumb-small bg-gray-200 flex items-center justify-center text-gray-400">📷</div>`;
+      const card = document.createElement('div');
+      card.className = "bg-gray-50 p-3 rounded-xl flex flex-wrap justify-between items-center gap-2";
+      card.innerHTML = `
+        <div class="flex items-center gap-3">
+          ${photoHtml}
+          <div>
+            <div class="font-semibold">${escapeHtml(staff.fullName)}</div>
+            <div class="text-xs text-gray-500">${staff.role === 'band' ? `Band ${staff.bandNumber}` : staff.role}</div>
+            ${lateMinutes > 0 ? `<div class="text-xs text-red-500">⚠️ Kechikkan: ${lateMinutes} daqiqa</div>` : ''}
+            ${workDuration > 0 ? `<div class="text-xs text-green-600">⏱️ Ishlagan: ${workHours} soat ${workMins} min</div>` : ''}
+            ${extraWork > 0 ? `<div class="text-xs text-blue-600">➕ Qo‘shimcha: ${extraWork} min</div>` : ''}
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          ${!isCheckedIn ? `<button onclick="checkIn('${staff._id}')" class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-blue-600">Kelish</button>` : ''}
+          ${isCheckedIn && !isCheckedOut ? `<button onclick="checkOut('${staff._id}')" class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-red-600">Ketish</button>` : ''}
+          ${isCheckedIn ? `<button onclick="addExtraWork('${staff._id}')" class="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-purple-600">⏱️ Qo'sh. Vaqt</button>` : ''}
+          ${isCheckedIn ? `<button onclick="addExtraWorkDay('${staff._id}')" class="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-amber-600">📅 Qo'sh. kun</button>` : ''}
+          ${isCheckedIn ? `<button onclick="addExtraWorkHour('${staff._id}')" class="bg-cyan-500 text-white px-3 py-1 rounded-full text-xs font-semibold hover:bg-cyan-600">🕐 Qo'sh. soat</button>` : ''}
+          ${isCheckedIn ? `<span class="text-xs text-green-600 font-semibold">✅ Kelgan</span>` : ''}
+          ${isCheckedOut ? `<span class="text-xs text-gray-500 font-semibold">🚪 Ketgan</span>` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function updateTodayStats() {
+    const today = new Date().toISOString().slice(0,10);
+    const todayRecords = attendanceRecords.filter(r => r.date === today);
+    const present = todayRecords.filter(r => r.checkIn).length;
+    const absent = staffList.length - present;
+    const late = todayRecords.filter(r => r.checkIn && r.lateMinutes > 0).length;
+    document.getElementById('presentCount').innerText = present;
+    document.getElementById('absentCount').innerText = absent;
+    document.getElementById('lateCount').innerText = late;
+  }
+
+  function renderHistory() {
+    const tbody = document.getElementById('historyTableBody');
+    tbody.innerHTML = '';
+    if (!attendanceRecords.length) {
+      tbody.innerHTML = `<td colspan="7" class="text-center py-8 text-gray-400">Hech qanday maʼlumot yo‘q</td></tr>`;
+      return;
+    }
+    attendanceRecords.forEach(rec => {
+      const empName = rec.employeeId?.fullName || (rec.employeeId ? rec.employeeId : '—');
+      const workDuration = rec.workDurationMinutes || 0;
+      const workHours = Math.floor(workDuration / 60);
+      const workMins = workDuration % 60;
+      const extraDays = rec.extraWorkDays || 0;
+      const extraHours = rec.extraWorkHours || 0;
+      const tr = document.createElement('tr');
+      tr.className = "border-b border-gray-100 hover:bg-gray-50";
+      tr.innerHTML = `
+        <td class="px-4 py-3 text-xs">${rec.date}</td>
+        <td class="px-4 py-3">${escapeHtml(empName)}</td>
+        <td class="px-4 py-3">${rec.checkIn ? new Date(rec.checkIn).toLocaleTimeString() : '—'}</td>
+        <td class="px-4 py-3">${rec.checkOut ? new Date(rec.checkOut).toLocaleTimeString() : '—'}</td>
+        <td class="px-4 py-3">${rec.lateMinutes || 0}</td>
+        <td class="px-4 py-3">${rec.extraWorkMinutes || 0}</td>
+        <td class="px-4 py-3 font-semibold text-amber-600">${extraDays > 0 ? `${extraDays} kun` : '—'}</td>
+        <td class="px-4 py-3 font-semibold text-cyan-600">${extraHours > 0 ? `${extraHours} soat` : '—'}</td>
+        <td class="px-4 py-3">${workDuration > 0 ? `${workHours} soat ${workMins} min` : '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  document.getElementById('searchStaff').addEventListener('input', renderStaffList);
+  setInterval(() => { fetchAttendance(); }, 30000); // 30 sekundda yangilanadi
+
+  fetchStaff();
+  fetchAttendance();
+  window.checkIn = checkIn;
+  window.checkOut = checkOut;
+  window.addExtraWork = addExtraWork;
+  window.addExtraWorkDay = addExtraWorkDay;
+  window.addExtraWorkHour = addExtraWorkHour;
+</script>
+</body>
+</html>

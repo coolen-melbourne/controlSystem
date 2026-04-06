@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Aksessuarlar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; }
+    .ios-button:active { transform: scale(0.96); }
+    .ios-input { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-2xl font-semibold mb-6 text-center tracking-tight">🧵 Aksessuarlar boshqaruvi</h1>
+
+  <div class="ios-card p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4">➕ Yangi aksessuar qo‘shish</h2>
+    <form id="accessoryForm" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Mahsulot nomi *</label><input type="text" id="productName" required class="ios-input w-full px-3 py-2 text-sm" placeholder="Masalan: ip, tesma, fermuar"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Kod / Model</label><input type="text" id="code" class="ios-input w-full px-3 py-2 text-sm" placeholder="Ixtiyoriy"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Soni (dona)</label><input type="number" id="quantity" step="1" class="ios-input w-full px-3 py-2 text-sm" placeholder="0"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Kg</label><input type="number" id="kg" step="0.01" class="ios-input w-full px-3 py-2 text-sm" placeholder="0.00"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Metr</label><input type="number" id="meters" step="0.01" class="ios-input w-full px-3 py-2 text-sm" placeholder="0.00"></div>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium transition">Saqlash</button>
+        <button type="button" id="cancelEditBtn" class="ml-3 bg-gray-300 hover:bg-gray-400 text-gray-700 px-5 py-2 rounded-full text-sm font-medium transition hidden">Bekor qilish</button>
+      </div>
+    </form>
+    <p class="text-xs text-gray-400 mt-3">* Mahsulot nomi bo‘yicha avtomatik guruhlanadi.</p>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+    <div class="flex-1 max-w-md"><input type="text" id="searchInput" placeholder="🔍 Mahsulot nomi, kod bo‘yicha qidirish..." class="ios-input w-full px-4 py-2 text-sm"></div>
+    <div class="bg-white/80 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 shadow-sm">Jami: <span id="totalCount">0</span> ta aksessuar</div>
+  </div>
+
+  <div id="groupsContainer" class="space-y-6"></div>
+</div>
+
+<script>
+  let accessories = [];
+  let editingId = null;
+
+  async function fetchAccessories() {
+    const res = await fetch('/api/accessories');
+    accessories = await res.json();
+    renderData();
+  }
+
+  async function saveAccessory(data) {
+    if (editingId !== null) {
+      await fetch(`/api/accessories/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } else {
+      await fetch('/api/accessories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+    fetchAccessories();
+  }
+
+  async function deleteAccessory(id) {
+    if (!confirm("O‘chirilsinmi?")) return;
+    await fetch(`/api/accessories/${id}`, { method: 'DELETE' });
+    fetchAccessories();
+  }
+
+  function editAccessory(id) {
+    const item = accessories.find(a => a._id === id);
+    if (!item) return;
+    editingId = id;
+    document.getElementById('productName').value = item.productName;
+    document.getElementById('code').value = item.code || '';
+    document.getElementById('quantity').value = item.quantity || '';
+    document.getElementById('kg').value = item.kg || '';
+    document.getElementById('meters').value = item.meters || '';
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Yangilash";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('productName').value = '';
+    document.getElementById('code').value = '';
+    document.getElementById('quantity').value = '';
+    document.getElementById('kg').value = '';
+    document.getElementById('meters').value = '';
+    editingId = null;
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Saqlash";
+  }
+
+  function getFilteredItems() {
+    const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+    if (!searchTerm) return accessories;
+    return accessories.filter(item =>
+      item.productName.toLowerCase().includes(searchTerm) ||
+      (item.code && item.code.toLowerCase().includes(searchTerm))
+    );
+  }
+
+  function groupByProductName(items) {
+    const groups = {};
+    items.forEach(item => {
+      const name = item.productName.toLowerCase();
+      if (!groups[name]) groups[name] = [];
+      groups[name].push(item);
+    });
+    return groups;
+  }
+
+  function renderData() {
+    const filtered = getFilteredItems();
+    document.getElementById('totalCount').innerText = filtered.length;
+    const groups = groupByProductName(filtered);
+    const sortedGroupNames = Object.keys(groups).sort();
+
+    const container = document.getElementById('groupsContainer');
+    container.innerHTML = '';
+    if (sortedGroupNames.length === 0) {
+      container.innerHTML = '<div class="ios-card p-8 text-center text-gray-400">Hech qanday aksessuar topilmadi</div>';
+      return;
+    }
+
+    for (let groupName of sortedGroupNames) {
+      const items = groups[groupName];
+      const groupCard = document.createElement('div');
+      groupCard.className = "ios-card overflow-hidden mb-6";
+      groupCard.innerHTML = `
+        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+          <h3 class="text-lg font-semibold capitalize">📦 ${groupName}</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr><th class="px-4 py-3">#</th><th class="px-4 py-3">Kod/Model</th><th class="px-4 py-3 text-right">Soni (dona)</th><th class="px-4 py-3 text-right">Kg</th><th class="px-4 py-3 text-right">Metr</th><th class="px-4 py-3 text-right">Amallar</th></tr>
+            </thead>
+            <tbody id="group-${groupName.replace(/\s/g, '-')}"></tbody>
+           </table>
+        </div>
+      `;
+      container.appendChild(groupCard);
+      const tbody = groupCard.querySelector('tbody');
+      items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "border-b border-gray-100 hover:bg-gray-50";
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-sm text-gray-500">${idx+1}</td>
+          <td class="px-4 py-3 text-sm">${escapeHtml(item.code || '—')}</td>
+          <td class="px-4 py-3 text-sm text-right">${item.quantity !== null && item.quantity !== '' ? item.quantity : '—'}</td>
+          <td class="px-4 py-3 text-sm text-right">${item.kg !== null && item.kg !== '' ? item.kg : '—'}</td>
+          <td class="px-4 py-3 text-sm text-right">${item.meters !== null && item.meters !== '' ? item.meters : '—'}</td>
+          <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+            <button onclick="editAccessory('${item._id}')" class="text-blue-600 text-sm hover:underline">✏️ Tahrir</button>
+            <button onclick="deleteAccessory('${item._id}')" class="text-red-600 text-sm hover:underline">🗑️ O‘chir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  document.getElementById('accessoryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const productName = document.getElementById('productName').value.trim();
+    if (!productName) { alert("Mahsulot nomini kiriting!"); return; }
+    const code = document.getElementById('code').value.trim() || null;
+    const quantity = document.getElementById('quantity').value ? parseFloat(document.getElementById('quantity').value) : null;
+    const kg = document.getElementById('kg').value ? parseFloat(document.getElementById('kg').value) : null;
+    const meters = document.getElementById('meters').value ? parseFloat(document.getElementById('meters').value) : null;
+    await saveAccessory({ productName, code, quantity, kg, meters });
+    resetForm();
+  });
+  document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+  document.getElementById('searchInput').addEventListener('input', renderData);
+
+  fetchAccessories();
+  window.editAccessory = editAccessory;
+  window.deleteAccessory = deleteAccessory;
+</script>
+</body>
+</html>

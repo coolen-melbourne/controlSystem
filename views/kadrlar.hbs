@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Kadrlar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; }
+    .ios-button:active { transform: scale(0.96); }
+    .ios-input, .ios-select { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
+    .ios-input:focus, .ios-select:focus { border-color: #007aff; outline: none; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+    .thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; background: #f3f4f6; }
+    .camera-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .camera-content {
+      background: white;
+      border-radius: 1rem;
+      padding: 1rem;
+      width: 90%;
+      max-width: 500px;
+    }
+    video { width: 100%; border-radius: 0.75rem; background: #000; }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-2xl font-semibold mb-6 text-center tracking-tight">👥 Kadrlar boshqaruvi</h1>
+
+  <!-- Form -->
+  <div class="ios-card p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4">➕ Yangi xodim qo‘shish</h2>
+    <form id="staffForm" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">To‘liq ismi *</label>
+          <input type="text" id="fullName" required class="ios-input w-full px-3 py-2 text-sm" placeholder="Masalan: Anvar Karimov">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Lavozimi *</label>
+          <select id="role" required class="ios-select w-full px-3 py-2 text-sm">
+            <option value="band">Band ishchisi</option>
+            <option value="upakovka">Upakovka ishchisi</option>
+            <option value="dazmol">Dazmol ishchisi</option>
+            <option value="general">Umumiy ishchi</option>
+          </select>
+        </div>
+        <div id="bandField" class="hidden">
+          <label class="block text-sm font-medium text-gray-600 mb-1">Band raqami (1–18)</label>
+          <select id="bandNumber" class="ios-select w-full px-3 py-2 text-sm">
+            <option value="">Band tanlang</option>
+            <option value="1-band">1-band</option><option value="2-band">2-band</option><option value="3-band">3-band</option>
+            <option value="4-band">4-band</option><option value="5-band">5-band</option><option value="6-band">6-band</option>
+            <option value="7-band">7-band</option><option value="8-band">8-band</option><option value="9-band">9-band</option>
+            <option value="10-band">10-band</option><option value="11-band">11-band</option><option value="12-band">12-band</option>
+            <option value="13-band">13-band</option><option value="14-band">14-band</option><option value="15-band">15-band</option>
+            <option value="16-band">16-band</option><option value="17-band">17-band</option><option value="18-band">18-band</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Telefon raqami</label>
+          <input type="tel" id="phone" class="ios-input w-full px-3 py-2 text-sm" placeholder="+998 90 123 45 67">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-600 mb-1">Ishga qabul sanasi</label>
+          <input type="date" id="hireDate" class="ios-input w-full px-3 py-2 text-sm">
+        </div>
+      </div>
+
+      <!-- Rasm olish / yuklash -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Rasm (ixtiyoriy)</label>
+        <div class="flex items-center gap-4 flex-wrap">
+          <div id="photoPreview" class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border border-gray-300">
+            <img id="photoImg" class="w-full h-full object-cover hidden">
+            <span id="photoPlaceholder" class="text-gray-400 text-sm">📷</span>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" id="openCameraBtn" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm">📸 Rasmga olish</button>
+            <button type="button" id="fallbackUploadBtn" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm">📁 Fayldan yuklash</button>
+            <button type="button" id="removePhotoBtn" class="text-red-500 text-sm hidden">O‘chirish</button>
+          </div>
+        </div>
+        <div id="cameraErrorMsg" class="text-red-500 text-xs mt-2 hidden"></div>
+      </div>
+
+      <div class="flex justify-end">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium transition">Saqlash</button>
+        <button type="button" id="cancelEditBtn" class="ml-3 bg-gray-300 hover:bg-gray-400 text-gray-700 px-5 py-2 rounded-full text-sm font-medium transition hidden">Bekor qilish</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Camera modal -->
+  <div id="cameraModal" class="camera-modal hidden">
+    <div class="camera-content">
+      <video id="video" autoplay playsinline class="w-full rounded-lg"></video>
+      <div class="flex justify-between mt-4">
+        <button id="closeCameraBtn" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-full text-sm">Bekor</button>
+        <button id="capturePhotoBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-sm">Rasmni olish</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="canvas" class="hidden"></canvas>
+  <input type="file" id="fallbackFileInput" accept="image/*" class="hidden">
+
+  <!-- Filter va jami -->
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+    <div class="flex-1 max-w-md">
+      <input type="text" id="filterInput" placeholder="🔍 Ism, lavozim yoki telefon bo‘yicha qidirish..." class="ios-input w-full px-4 py-2 text-sm">
+    </div>
+    <div class="bg-white/80 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 shadow-sm">
+      Jami: <span id="totalCount">0</span> ta xodim
+    </div>
+  </div>
+
+  <!-- Ro‘yxat -->
+  <div class="ios-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse hidden md:table">
+        <thead>
+          <tr class="bg-gray-50 text-gray-500 text-xs uppercase border-b border-gray-200">
+            <th class="px-4 py-3">Rasm</th>
+            <th class="px-4 py-3">#</th>
+            <th class="px-4 py-3">Ism</th>
+            <th class="px-4 py-3">Lavozim</th>
+            <th class="px-4 py-3">Band</th>
+            <th class="px-4 py-3">Telefon</th>
+            <th class="px-4 py-3">Qabul sanasi</th>
+            <th class="px-4 py-3 text-right">Amallar</th>
+           </thead>
+        <tbody id="staffTableBody"></tbody>
+       </table>
+    </div>
+    <div id="mobileList" class="md:hidden divide-y divide-gray-100"></div>
+  </div>
+</div>
+
+<script>
+  let staff = [];
+  let editingId = null;
+  let currentPhotoData = null;
+
+  const form = document.getElementById('staffForm');
+  const fullNameInput = document.getElementById('fullName');
+  const roleSelect = document.getElementById('role');
+  const bandField = document.getElementById('bandField');
+  const bandNumberSelect = document.getElementById('bandNumber');
+  const phoneInput = document.getElementById('phone');
+  const hireDateInput = document.getElementById('hireDate');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const filterInput = document.getElementById('filterInput');
+  const totalCountSpan = document.getElementById('totalCount');
+  const tableBody = document.getElementById('staffTableBody');
+  const mobileList = document.getElementById('mobileList');
+
+  const openCameraBtn = document.getElementById('openCameraBtn');
+  const fallbackUploadBtn = document.getElementById('fallbackUploadBtn');
+  const fallbackFileInput = document.getElementById('fallbackFileInput');
+  const cameraModal = document.getElementById('cameraModal');
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  const captureBtn = document.getElementById('capturePhotoBtn');
+  const closeCameraBtn = document.getElementById('closeCameraBtn');
+  const removePhotoBtn = document.getElementById('removePhotoBtn');
+  const photoImg = document.getElementById('photoImg');
+  const photoPlaceholder = document.getElementById('photoPlaceholder');
+  const cameraErrorMsg = document.getElementById('cameraErrorMsg');
+
+  let mediaStream = null;
+
+  // API calls
+  async function fetchStaff() {
+    const res = await fetch('/api/staff');
+    staff = await res.json();
+    renderData();
+  }
+
+  async function saveStaff(data) {
+    if (editingId !== null) {
+      await fetch(`/api/staff/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } else {
+      await fetch('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+    fetchStaff();
+  }
+
+  async function deleteStaff(id) {
+    if (!confirm("O‘chirilsinmi?")) return;
+    await fetch(`/api/staff/${id}`, { method: 'DELETE' });
+    fetchStaff();
+  }
+
+  function editStaff(id) {
+    const member = staff.find(s => s._id === id);
+    if (!member) return;
+    editingId = id;
+    fullNameInput.value = member.fullName;
+    roleSelect.value = member.role;
+    toggleBandField();
+    bandNumberSelect.value = member.bandNumber || '';
+    phoneInput.value = member.phone || '';
+    hireDateInput.value = member.hireDate ? member.hireDate.split('T')[0] : '';
+    updatePhotoPreview(member.photo || null);
+    cancelEditBtn.classList.remove('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Yangilash";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function printStaff(id) {
+    const member = staff.find(s => s._id === id);
+    if (!member) return;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html><head><title>Xodim ma'lumotlari</title></head>
+      <body style="font-family: sans-serif; padding: 2rem;">
+        ${member.photo ? `<img src="${member.photo}" style="width:100px;height:100px;border-radius:50%;"><br>` : ''}
+        <h2>${escapeHtml(member.fullName)}</h2>
+        <p><strong>Lavozim:</strong> ${member.role === 'band' ? 'Band ishchisi' : (member.role === 'upakovka' ? 'Upakovka ishchisi' : (member.role === 'dazmol' ? 'Dazmol ishchisi' : 'Umumiy ishchi'))}</p>
+        ${member.bandNumber ? `<p><strong>Band:</strong> ${member.bandNumber}</p>` : ''}
+        <p><strong>Telefon:</strong> ${member.phone || '—'}</p>
+        <p><strong>Ishga qabul sanasi:</strong> ${member.hireDate ? new Date(member.hireDate).toLocaleDateString() : '—'}</p>
+        <hr><p>Chop etilgan: ${new Date().toLocaleString()}</p>
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const fullName = fullNameInput.value.trim();
+    const role = roleSelect.value;
+    const bandNumber = role === 'band' ? bandNumberSelect.value : null;
+    if (!fullName || !role) { alert("Ism va lavozimni to‘ldiring!"); return; }
+    if (role === 'band' && !bandNumber) { alert("Band raqamini tanlang!"); return; }
+
+    const newData = { fullName, role, bandNumber, phone: phoneInput.value.trim(), hireDate: hireDateInput.value, photo: currentPhotoData };
+    saveStaff(newData);
+    resetForm();
+  }
+
+  function resetForm() {
+    fullNameInput.value = '';
+    roleSelect.value = 'band';
+    toggleBandField();
+    bandNumberSelect.value = '';
+    phoneInput.value = '';
+    hireDateInput.value = '';
+    updatePhotoPreview(null);
+    editingId = null;
+    cancelEditBtn.classList.add('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Saqlash";
+  }
+
+  function getFilteredStaff() {
+    const f = filterInput.value.trim().toLowerCase();
+    if (!f) return staff;
+    return staff.filter(s => s.fullName.toLowerCase().includes(f) || s.role.toLowerCase().includes(f) || (s.phone && s.phone.includes(f)));
+  }
+
+  function renderData() {
+    const filtered = getFilteredStaff();
+    totalCountSpan.innerText = filtered.length;
+    tableBody.innerHTML = '';
+    mobileList.innerHTML = '';
+    if (!filtered.length) {
+      tableBody.innerHTML = `<td colspan="8" class="text-center py-8 text-gray-400">Hech qanday xodim topilmadi</tr>`;
+      mobileList.innerHTML = '<div class="p-8 text-center text-gray-400">Hech qanday xodim topilmadi</div>';
+      return;
+    }
+    filtered.forEach((member, idx) => {
+      const photoHtml = member.photo ? `<img src="${member.photo}" class="thumb w-10 h-10 object-cover rounded-full">` : `<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-400">📷</div>`;
+      const roleText = member.role === 'band' ? 'Band ishchisi' : (member.role === 'upakovka' ? 'Upakovka' : (member.role === 'dazmol' ? 'Dazmol' : 'Umumiy'));
+      const bandDisplay = member.bandNumber ? member.bandNumber : '—';
+      const tr = document.createElement('tr');
+      tr.className = "border-b border-gray-100 hover:bg-gray-50";
+      tr.innerHTML = `
+        <td class="px-4 py-3">${photoHtml}</td>
+        <td class="px-4 py-3 text-sm text-gray-500">${idx+1}</td>
+        <td class="px-4 py-3 font-medium text-gray-800">${escapeHtml(member.fullName)}</td>
+        <td class="px-4 py-3 text-gray-600">${roleText}</td>
+        <td class="px-4 py-3 text-gray-600">${bandDisplay}</td>
+        <td class="px-4 py-3 text-gray-600">${escapeHtml(member.phone || '—')}</td>
+        <td class="px-4 py-3 text-gray-600">${member.hireDate ? new Date(member.hireDate).toLocaleDateString() : '—'}</td>
+        <td class="px-4 py-3 text-right space-x-2">
+          <button onclick="editStaff('${member._id}')" class="text-blue-600 text-sm">✏️ Tahrir</button>
+          <button onclick="deleteStaff('${member._id}')" class="text-red-600 text-sm">🗑️ O‘chir</button>
+          <button onclick="printStaff('${member._id}')" class="text-green-600 text-sm">🖨️ Chop</button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+
+      const card = document.createElement('div');
+      card.className = "p-4 border-b border-gray-100";
+      card.innerHTML = `
+        <div class="flex gap-3">
+          <div class="flex-shrink-0">${photoHtml}</div>
+          <div class="flex-1">
+            <div class="font-semibold">${escapeHtml(member.fullName)}</div>
+            <div class="text-xs text-gray-500">${roleText} ${member.bandNumber ? `· ${member.bandNumber}` : ''}</div>
+            <div class="text-xs text-gray-500">📞 ${escapeHtml(member.phone || '—')}</div>
+            <div class="text-xs text-gray-500">📅 ${member.hireDate ? new Date(member.hireDate).toLocaleDateString() : '—'}</div>
+            <div class="mt-2 flex gap-2">
+              <button onclick="editStaff('${member._id}')" class="text-blue-600 text-sm">✏️</button>
+              <button onclick="deleteStaff('${member._id}')" class="text-red-600 text-sm">🗑️</button>
+              <button onclick="printStaff('${member._id}')" class="text-green-600 text-sm">🖨️</button>
+            </div>
+          </div>
+        </div>
+      `;
+      mobileList.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  function toggleBandField() {
+    if (roleSelect.value === 'band') bandField.classList.remove('hidden');
+    else { bandField.classList.add('hidden'); bandNumberSelect.value = ''; }
+  }
+  roleSelect.addEventListener('change', toggleBandField);
+
+  function updatePhotoPreview(dataUrl) {
+    if (dataUrl) {
+      photoImg.src = dataUrl;
+      photoImg.classList.remove('hidden');
+      photoPlaceholder.classList.add('hidden');
+      removePhotoBtn.classList.remove('hidden');
+      currentPhotoData = dataUrl;
+    } else {
+      photoImg.classList.add('hidden');
+      photoPlaceholder.classList.remove('hidden');
+      removePhotoBtn.classList.add('hidden');
+      currentPhotoData = null;
+    }
+  }
+
+  // Camera handling (same as original)
+  async function startCamera() {
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = mediaStream;
+      cameraModal.classList.remove('hidden');
+      cameraErrorMsg.classList.add('hidden');
+    } catch (err) {
+      console.error('Camera error:', err);
+      cameraErrorMsg.innerText = '❌ Kamerani ishga tushirib bo‘lmadi. Iltimos, ruxsat berganingizni tekshiring yoki fayldan yuklash tugmasidan foydalaning.';
+      cameraErrorMsg.classList.remove('hidden');
+    }
+  }
+  function stopCamera() {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      mediaStream = null;
+    }
+    video.srcObject = null;
+    cameraModal.classList.add('hidden');
+  }
+  async function capturePhoto() {
+    if (!video.videoWidth) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    try {
+      const resized = await resizeImage(dataUrl, 200, 200, 0.7);
+      updatePhotoPreview(resized);
+    } catch (err) {
+      console.error('Resize error:', err);
+      updatePhotoPreview(dataUrl);
+    }
+    stopCamera();
+  }
+  function resizeImage(dataUrl, maxWidth, maxHeight, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width, height = img.height;
+        if (width > maxWidth) { height *= maxWidth / width; width = maxWidth; }
+        if (height > maxHeight) { width *= maxHeight / height; height = maxHeight; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+  }
+  openCameraBtn.addEventListener('click', startCamera);
+  captureBtn.addEventListener('click', capturePhoto);
+  closeCameraBtn.addEventListener('click', stopCamera);
+  removePhotoBtn.addEventListener('click', () => updatePhotoPreview(null));
+  fallbackUploadBtn.addEventListener('click', () => fallbackFileInput.click());
+  fallbackFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const resized = await resizeImage(ev.target.result, 200, 200, 0.7);
+        updatePhotoPreview(resized);
+      } catch (err) {
+        console.error('Fallback upload error:', err);
+        updatePhotoPreview(ev.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    fallbackFileInput.value = '';
+  });
+
+  form.addEventListener('submit', handleSubmit);
+  cancelEditBtn.addEventListener('click', resetForm);
+  filterInput.addEventListener('input', renderData);
+
+  fetchStaff();
+  window.editStaff = editStaff;
+  window.deleteStaff = deleteStaff;
+  window.printStaff = printStaff;
+</script>
+</body>
+</html>

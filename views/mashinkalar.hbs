@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Tikuv mashinalari</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; }
+    .ios-button:active { transform: scale(0.96); }
+    .ios-input { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-2xl font-semibold mb-6 text-center tracking-tight">Tikuv mashinalari boshqaruvi</h1>
+
+  <div class="ios-card p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4">➕ Yangi mashina qo'shish</h2>
+    <form id="machineForm" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Mashina nomi</label><input type="text" id="name" required class="ios-input w-full px-3 py-2 text-sm" placeholder="Masalan: Brother, Juki"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Model raqami</label><input type="text" id="model" required class="ios-input w-full px-3 py-2 text-sm" placeholder="Masalan: DDL-8700"></div>
+        <div><label class="block text-sm font-medium text-gray-600 mb-1">Seriya raqami</label><input type="text" id="serial" required class="ios-input w-full px-3 py-2 text-sm" placeholder="Masalan: SN-001"></div>
+      </div>
+      <div class="flex justify-end">
+        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium transition">Saqlash</button>
+        <button type="button" id="cancelEditBtn" class="ml-3 bg-gray-300 hover:bg-gray-400 text-gray-700 px-5 py-2 rounded-full text-sm font-medium transition hidden">Bekor qilish</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+    <div class="flex-1 max-w-md"><input type="text" id="filterInput" placeholder="🔍 Mashina nomi bo‘yicha qidirish..." class="ios-input w-full px-4 py-2 text-sm"></div>
+    <div class="bg-white/80 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 shadow-sm">Jami: <span id="totalCount">0</span> ta mashina</div>
+  </div>
+
+  <div class="ios-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse hidden md:table">
+        <thead><tr class="bg-gray-50 text-gray-500 text-xs uppercase"><th class="px-4 py-3">#</th><th>Mashina nomi</th><th>Model raqami</th><th>Seriya raqami</th><th class="text-right">Amallar</th></tr></thead>
+        <tbody id="machineTableBody"></tbody>
+      </table>
+    </div>
+    <div id="mobileList" class="md:hidden divide-y divide-gray-100"></div>
+  </div>
+</div>
+
+<script>
+  let machines = [];
+  let editingId = null;
+
+  async function fetchMachines() {
+    const res = await fetch('/api/machines');
+    machines = await res.json();
+    renderData();
+  }
+
+  async function saveMachine(data) {
+    if (editingId !== null) {
+      await fetch(`/api/machines/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } else {
+      await fetch('/api/machines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+    fetchMachines();
+  }
+
+  async function deleteMachine(id) {
+    if (!confirm("O‘chirilsinmi?")) return;
+    await fetch(`/api/machines/${id}`, { method: 'DELETE' });
+    fetchMachines();
+  }
+
+  function editMachine(id) {
+    const machine = machines.find(m => m._id === id);
+    if (!machine) return;
+    editingId = id;
+    document.getElementById('name').value = machine.name;
+    document.getElementById('model').value = machine.model;
+    document.getElementById('serial').value = machine.serial;
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Yangilash";
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    document.getElementById('name').value = '';
+    document.getElementById('model').value = '';
+    document.getElementById('serial').value = generateSerialNumber();
+    editingId = null;
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+    document.querySelector('button[type="submit"]').textContent = "Saqlash";
+  }
+
+  function generateSerialNumber() {
+    const existingSerials = machines.map(m => parseInt(m.serial, 10)).filter(n => !isNaN(n));
+    const maxSerial = existingSerials.length ? Math.max(...existingSerials) : 0;
+    const nextNumber = maxSerial + 1;
+    return nextNumber.toString().padStart(3, '0');
+  }
+
+  function printMachine(id) {
+    const machine = machines.find(m => m._id === id);
+    if (!machine) return;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html><head><title>Mashina ma'lumotlari</title></head>
+      <body style="font-family: sans-serif; padding: 2rem;">
+        <h2>${escapeHtml(machine.name)}</h2>
+        <p><strong>Model:</strong> ${escapeHtml(machine.model)}</p>
+        <p><strong>Seriya raqami:</strong> ${escapeHtml(machine.serial)}</p>
+        <hr><p>Chop etilgan sana: ${new Date().toLocaleString()}</p>
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  }
+
+  function printLabel(machine, idx) {
+    const siteUrl = window.location.origin;
+    const labelContent = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>Mashina yorlig'i</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #e5e7eb; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .label { width: 60.2mm; height: 40.6mm; background: white; border: 1px solid #ccc; border-radius: 2mm; padding: 2mm; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { text-align: center; font-weight: bold; font-size: 3mm; color: #9b0d1a; margin-bottom: 1mm; }
+        .header span { font-size: 2.5mm; font-weight: normal; color: #333; }
+        .details { font-size: 2.8mm; margin-bottom: 2mm; line-height: 1.2; }
+        .qr-area { display: flex; justify-content: space-between; align-items: center; }
+        .qr-code { width: 20mm; height: 20mm; border: 1px solid #ddd; border-radius: 1mm; padding: 1mm; background: #f9f9f9; }
+        .info { flex: 1; margin-left: 2mm; font-size: 2.5mm; }
+        .info p { margin: 1mm 0; }
+        .serial-number { font-weight: bold; color: #007aff; }
+        .footer { text-align: right; font-size: 2mm; color: #888; margin-top: 1mm; }
+        @page { size: 60.2mm 40.6mm; margin: 0; }
+        @media print { body { background: none; margin: 0; padding: 0; } .label { box-shadow: none; border: none; padding: 0; } }
+      </style>
+      </head>
+      <body>
+        <div class="label">
+          <div class="header">THE BESTTEX <span>| Umumiy ishxona nazorati</span></div>
+          <div class="details"><strong>${escapeHtml(machine.name)}</strong> · ${escapeHtml(machine.model)}</div>
+          <div class="qr-area">
+            <div id="qrcode" class="qr-code"></div>
+            <div class="info"><p>Seriya: <span class="serial-number">${escapeHtml(machine.serial)}</span></p><p>№: ${String(idx+1).padStart(3,'0')}</p></div>
+          </div>
+          <div class="footer">${new Date().toLocaleDateString()}</div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+        <script>
+          new QRCode(document.getElementById("qrcode"), {
+            text: "${siteUrl}",
+            width: 64, height: 64, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.H
+          });
+        <\/script>
+      </body>
+      </html>
+    `;
+    const win = window.open('', '_blank');
+    win.document.write(labelContent);
+    win.document.close();
+    win.print();
+  }
+
+  function getFilteredMachines() {
+    const filterText = document.getElementById('filterInput').value.trim().toLowerCase();
+    if (!filterText) return machines;
+    return machines.filter(m => m.name.toLowerCase().includes(filterText));
+  }
+
+  function renderData() {
+    const filtered = getFilteredMachines();
+    document.getElementById('totalCount').innerText = filtered.length;
+    const tableBody = document.getElementById('machineTableBody');
+    const mobileList = document.getElementById('mobileList');
+    tableBody.innerHTML = '';
+    mobileList.innerHTML = '';
+    if (!filtered.length) {
+      tableBody.innerHTML = `<td colspan="5" class="text-center py-8 text-gray-400">Hech qanday mashina topilmadi</tr>`;
+      mobileList.innerHTML = '<div class="p-8 text-center text-gray-400">Hech qanday mashina topilmadi</div>';
+      return;
+    }
+    filtered.forEach((machine, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = "border-b border-gray-100 hover:bg-gray-50";
+      tr.innerHTML = `
+        <td class="px-4 py-3 text-sm text-gray-500">${idx+1}</td>
+        <td class="px-4 py-3 font-medium text-gray-800">${escapeHtml(machine.name)}</td>
+        <td class="px-4 py-3 text-gray-600">${escapeHtml(machine.model)}</td>
+        <td class="px-4 py-3 text-gray-600">${escapeHtml(machine.serial)}</td>
+        <td class="px-4 py-3 text-right space-x-2">
+          <button onclick="editMachine('${machine._id}')" class="text-blue-600 text-sm">✏️ Tahrir</button>
+          <button onclick="deleteMachine('${machine._id}')" class="text-red-600 text-sm">🗑️ O‘chir</button>
+          <button onclick="printMachine('${machine._id}')" class="text-green-600 text-sm">🖨️ Chop</button>
+          <button onclick="printLabel(machines.find(m => m._id === '${machine._id}'), ${idx})" class="text-purple-600 text-sm">🏷️ Label</button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+      const card = document.createElement('div');
+      card.className = "p-4 border-b border-gray-100";
+      card.innerHTML = `
+        <div class="flex justify-between items-start">
+          <div><div class="font-semibold">${escapeHtml(machine.name)}</div><div class="text-xs text-gray-500">Model: ${escapeHtml(machine.model)}</div><div class="text-xs text-gray-500">Seriya: ${escapeHtml(machine.serial)}</div></div>
+          <div class="flex gap-2 flex-wrap justify-end">
+            <button onclick="editMachine('${machine._id}')" class="text-blue-600 text-sm">✏️</button>
+            <button onclick="deleteMachine('${machine._id}')" class="text-red-600 text-sm">🗑️</button>
+            <button onclick="printMachine('${machine._id}')" class="text-green-600 text-sm">🖨️</button>
+            <button onclick="printLabel(machines.find(m => m._id === '${machine._id}'), ${idx})" class="text-purple-600 text-sm">🏷️</button>
+          </div>
+        </div>
+      `;
+      mobileList.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  document.getElementById('machineForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const serial = document.getElementById('serial').value.trim();
+    if (!name || !model || !serial) { alert("Barcha maydonlarni to‘ldiring!"); return; }
+    await saveMachine({ name, model, serial });
+    resetForm();
+  });
+  document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+  document.getElementById('filterInput').addEventListener('input', renderData);
+
+  fetchMachines();
+  window.editMachine = editMachine;
+  window.deleteMachine = deleteMachine;
+  window.printMachine = printMachine;
+  window.printLabel = printLabel;
+  window.machines = machines;
+</script>
+</body>
+</html>

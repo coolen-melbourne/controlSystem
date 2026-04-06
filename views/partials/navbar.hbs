@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>BestTex Admin</title>
+    <style>
+        /* Loader Animatsiyalari */
+        @keyframes spinReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes pulse-loader { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes glow-pulse { 0%, 100% { filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6)); } 50% { filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9)); } }
+        @keyframes float-up { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+        @keyframes pulse-scale { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        #introLoader { animation: pulse-loader 0.3s ease-in; }
+        .loader-circle-outer { animation: spin 2.5s linear infinite, glow-pulse 2s ease-in-out infinite; }
+        .loader-circle-inner { animation: spinReverse 3.5s linear infinite; }
+        .loader-text { animation: float-up 2s ease-in-out infinite; }
+        .loader-dot { animation: pulse-scale 1.5s ease-in-out infinite; }
+        
+        /* Navbar Stillar */
+        .navbar { 
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        /* Maxsus effektlar */
+        .nav-btn-desktop {
+            @apply px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 border-2 border-transparent text-slate-700 hover:border-blue-500 hover:bg-blue-50 active:scale-95 relative overflow-hidden;
+        }
+        .nav-btn-desktop::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(59, 130, 246, 0.1);
+            transition: left 0.3s ease;
+        }
+        .nav-btn-desktop:hover::before { left: 100%; }
+        .nav-btn-desktop span { position: relative; z-index: 1; }
+        
+        .active-desktop {
+            @apply bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white shadow-lg shadow-blue-300 hover:shadow-blue-400 !important;
+        }
+        
+        /* Sidebar animatsiyasi */
+        #mobileSidebar.hidden-sidebar {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #mobileSidebar.show-sidebar {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        #sidebarContent {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.15);
+        }
+        .hidden-content { transform: translateX(100%); }
+        .show-content { transform: translateX(0); }
+        
+        /* Menu Link Animas */
+        .sidebar-link {
+            @apply flex items-center gap-4 p-4 rounded-2xl text-slate-700 transition-all duration-300 relative;
+        }
+        .sidebar-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 3px;
+            height: 0;
+            background: linear-gradient(180deg, #3b82f6, #1e40af);
+            transition: height 0.3s ease;
+            border-radius: 0 3px 3px 0;
+        }
+        .sidebar-link:hover { background-color: rgba(59, 130, 246, 0.1); }
+        .sidebar-link:hover::before { height: 100%; }
+        .sidebar-link.active { background: linear-gradient(135deg, #dbeafe, #eff6ff); color: #1e40af; }
+
+          @keyframes toast-slide-in {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes toast-fade-out {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(20px); visibility: hidden; }
+  }
+  .telegram-toast {
+    animation: toast-slide-in 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+  }
+  .telegram-toast.hide-toast {
+    animation: toast-fade-out 0.3s ease forwards;
+  }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<!-- 1. Intro Loader -->
+<div id="introLoader" class="fixed inset-0 z-[200] bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center transition-opacity duration-500 ease-out">
+    <div class="text-center">
+        <!-- Loader Animation -->
+        <div class="relative w-32 h-32 mx-auto mb-8">
+            <!-- Outer circle - Red gradient -->
+            <div class="loader-circle-outer absolute inset-0 rounded-full border-4 border-transparent border-t-red-600 border-r-red-400 border-b-blue-500"></div>
+            <!-- Inner circle - Blue gradient -->
+            <div class="loader-circle-inner absolute inset-3 rounded-full border-3 border-transparent border-t-blue-600 border-r-blue-400 border-b-red-500 border-l-red-600"></div>
+            <!-- Middle circle - Mixed colors -->
+            <div class="absolute inset-6 rounded-full border-2 border-transparent border-t-red-500 border-b-blue-500" style="animation: spin 1.5s linear infinite reverse;"></div>
+            <!-- Center dot -->
+            <div class="loader-dot absolute inset-0 flex items-center justify-center">
+                <div class="w-4 h-4 bg-gradient-to-r from-red-600 via-red-500 to-blue-600 rounded-full shadow-lg shadow-red-500"></div>
+            </div>
+        </div>
+        <p class="loader-text text-center">
+            <span class="text-3xl font-bold bg-gradient-to-r from-red-600 via-red-500 to-blue-600 bg-clip-text text-transparent">THE BEST TEX</span><br>
+            <span class="text-xs text-gray-500 tracking-widest mt-2 inline-block">Yuklanmoqda...</span>
+        </p>
+    </div>
+</div>
+
+<!-- 2. Navbar -->
+<nav class="navbar fixed top-0 left-0 right-0 z-50 px-4 py-3 border-b border-gray-100">
+    <div class="max-w-[1440px] mx-auto flex items-center justify-between">
+        
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2 group">
+            <div class="bg-red-700 p-1.5 rounded-lg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z"/></svg>
+            </div>
+            <span class="font-bold text-slate-800 tracking-tight hidden sm:inline">THE BEST TEX</span>
+        </a>
+
+        <!-- Desktop Menu (Katta ekranlar uchun) -->
+        <div class="hidden lg:flex items-center gap-4">
+            <a href="/" class="nav-btn-desktop active-desktop" title="Tikuv soni"><span>Tikuv soni</span></a>
+            <a href="/grafik" class="nav-btn-desktop" title="Statistika"><span>Statistika</span></a>
+            <a href="/kesimXona" class="nav-btn-desktop" title="Kirim"><span>Kirim</span></a>
+            <a href="/chiqim" class="nav-btn-desktop" title="Chiqim"><span>Chiqim</span></a>
+            <a href="/kadrlar" class="nav-btn-desktop" title="Kadrlar"><span>Kadrlar</span></a>
+            <a href="/davomat" class="nav-btn-desktop" title="Davomat"><span>Davomat</span></a>
+            <a href="/mashinkalar" class="nav-btn-desktop" title="Mashinalar"><span>Mashinalar</span></a>
+            <a href="/aksessuar" class="nav-btn-desktop" title="Aksessuar"><span>Aksessuar</span></a>
+        </div>
+
+        <!-- O'ng tomon: Test ovoz va Hamburger -->
+        <div class="flex items-center gap-2">
+            <button id="testAnnounceBtn" class="hidden md:block bg-slate-800 hover:bg-blue-600 text-white text-xs font-semibold px-5 py-2.5 rounded-full transition-all active:scale-90">
+                🔊 Test ovoz
+            </button>
+
+            <!-- Hamburger Button (Planshet va Mobile uchun) -->
+            <button onclick="toggleMenu(true)" class="lg:hidden p-2.5 rounded-xl bg-gray-100 text-slate-700 hover:bg-gray-200 active:scale-90 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- 3. Mobile/Tablet Sidebar (O'ngdan chiqadigan menyu) -->
+<div id="mobileSidebar" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm hidden-sidebar transition-all duration-300">
+    <!-- Bo'sh joyga bossa yopilishi uchun overlay -->
+    <div class="absolute inset-0" onclick="toggleMenu(false)"></div>
+    
+    <div id="sidebarContent" class="absolute right-0 top-0 bottom-0 w-[300px] bg-white shadow-2xl p-6 hidden-content flex flex-col">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="font-bold text-xl text-slate-800 tracking-tight">Menyu</h2>
+            <button onclick="toggleMenu(false)" class="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Menyu Linklari -->
+        <div class="flex flex-col gap-2 overflow-y-auto flex-grow">
+            <a href="/" class="sidebar-link active"><span class="text-lg">🏠</span> <span>Asosiy</span></a>
+            <a href="/grafik" class="sidebar-link"><span class="text-lg">📊</span> <span>Statistika</span></a>
+            <a href="/kesimXona" class="sidebar-link"><span class="text-lg">📥</span> <span>Kroy kirim</span></a>
+            <a href="/chiqim" class="sidebar-link"><span class="text-lg">📤</span> <span>Kroy chiqim</span></a>
+            <a href="/kadrlar" class="sidebar-link"><span class="text-lg">👥</span> <span>Kadrlar</span></a>
+            <a href="/davomat" class="sidebar-link"><span class="text-lg">📅</span> <span>Davomat</span></a>
+            <a href="/mashinkalar" class="sidebar-link"><span class="text-lg">⚙️</span> <span>Mashinalar</span></a>
+            <a href="/aksessuar" class="sidebar-link"><span class="text-lg">🧵</span> <span>Aksessuar</span></a>
+            <a href="/mikrafon" class="sidebar-link"><span class="text-lg">🎤</span> <span>Mikrafon</span></a>
+        </div>
+
+        <!-- Pastki qism -->
+        <div class="pt-6 border-t border-gray-100">
+            <button id="testAnnounceBtn" class="w-full py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-bold active:scale-95 transition-all duration-200 hover:shadow-lg hover:shadow-slate-900/20">
+                🔊 Test Ovoz
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Asosiy Kontent uchun joy -->
+<main class="pt-24 px-4 max-w-[1440px] mx-auto">
+    <div class="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
+        <h1 class="text-2xl font-bold text-slate-800">Xush kelibsiz!</h1>
+        <p class="text-gray-500 mt-2">Boshqaruv paneliga xush kelibsiz!</p>
+    </div>
+</main>
+
+<script>
+
+    
+    // Loader yashirish
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.getElementById('introLoader').style.opacity = '0';
+            setTimeout(() => document.getElementById('introLoader').remove(), 500);
+        }, 800);
+    });
+
+      (function() {
+    function showTelegramDailyToast() {
+      const todayKey = new Date().toISOString().slice(0,10);
+      const lastDate = localStorage.getItem('telegramToastLastDate');
+      if (lastDate === todayKey) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'telegram-toast fixed bottom-5 right-5 z-50 bg-white rounded-2xl shadow-2xl border-l-4 border-blue-500 max-w-sm w-full';
+      toast.innerHTML = `
+        <div class="flex items-start p-4 gap-3">
+          <div class="bg-blue-100 rounded-full p-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900 text-sm">📡 Telegram kuzatuv</p>
+            <p class="text-sm text-gray-600">Maʼlumotlarni Telegram bot orqali kuzatib boring.<br>Statistika, kirim-chiqim, kadrlar — hamma narsa qoʻlingizda.</p>
+          </div>
+          <button class="close-toast text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <div class="bg-blue-50 px-4 py-2 text-xs text-blue-700 rounded-b-2xl">
+          🤖 @BestTexAdminBot | Kunlik eslatma
+        </div>
+      `;
+      document.body.appendChild(toast);
+
+      const closeBtn = toast.querySelector('.close-toast');
+      const hide = () => {
+        toast.classList.add('hide-toast');
+        setTimeout(() => toast.remove(), 300);
+      };
+      closeBtn.onclick = hide;
+      setTimeout(hide, 8000);
+
+      localStorage.setItem('telegramToastLastDate', todayKey);
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(showTelegramDailyToast, 1500);
+    });
+  })();
+
+    // Sidebar menyuni boshqarish
+    function toggleMenu(open) {
+        const sidebar = document.getElementById('mobileSidebar');
+        const content = document.getElementById('sidebarContent');
+        
+        if (open) {
+            sidebar.classList.replace('hidden-sidebar', 'show-sidebar');
+            content.classList.replace('hidden-content', 'show-content');
+            document.body.style.overflow = 'hidden'; // Scrollni to'xtatish
+        } else {
+            content.classList.replace('show-content', 'hidden-content');
+            setTimeout(() => {
+                sidebar.classList.replace('show-sidebar', 'hidden-sidebar');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+    }
+
+    // Test ovoz funksiyasi
+    document.addEventListener('DOMContentLoaded', () => {
+        const testBtns = document.querySelectorAll('#testAnnounceBtn');
+        testBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                playSound(1); // Test uchun 1 marta
+            });
+        });
+    });
+
+    const audio = new Audio('/sounds/sound.mp3');
+
+    // Ovoz chalish funksiyasi
+function playSound(times) {
+    let count = 0;
+
+
+    function playNext() {
+        if (count < times) {
+            audio.currentTime = 0;
+            audio.play().catch(err => console.error(err));
+
+            count++;
+
+            audio.onended = () => {
+                setTimeout(playNext, 3000); // 🔥 3 sek pauza
+            };
+        }
+    }
+
+    playNext();
+}
+    // Avtomatik ovoz jadvali
+    function scheduleDailySounds() {
+        const now = new Date();
+        const today = now.toDateString();
+        
+        // Ertalab 7:50 - 1 marta
+        const morningEarly = new Date(today + ' 07:50:00');
+        if (now < morningEarly) {
+            const delay = morningEarly - now;
+            setTimeout(() => playSound(1), delay);
+        }
+        
+        // Ertalab 8:00 - 5 marta
+        const morning = new Date(today + ' 08:00:00');
+        if (now < morning) {
+            const delay = morning - now;
+            setTimeout(() => playSound(5), delay);
+        }
+        
+        // Tushda 12:00 - 5 marta
+        const noon = new Date(today + ' 12:00:00');
+        if (now < noon) {
+            const delay = noon - now;
+            setTimeout(() => playSound(5), delay);
+        }
+        
+        // Kunduzi 13:00 - 4 marta
+        const afternoon = new Date(today + ' 13:00:00');
+        if (now < afternoon) {
+            const delay = afternoon - now;
+            setTimeout(() => playSound(4), delay);
+        }
+        
+        // Kechqurun 18:00 - 5 marta
+        const evening = new Date(today + ' 18:00:00');
+        if (now < evening) {
+            const delay = evening - now;
+            setTimeout(() => playSound(5), delay);
+        }
+        
+        // Ertangi kun uchun qayta jadval
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const timeUntilTomorrow = tomorrow - now;
+        setTimeout(scheduleDailySounds, timeUntilTomorrow);
+    }
+
+    // Sahifa yuklanganda jadvalni boshlash
+    window.addEventListener('load', () => {
+        scheduleDailySounds();
+    });
+
+    
+</script>
+
+</body>
+</html>

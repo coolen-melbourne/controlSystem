@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Mikrafon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .navbar { background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
+    .nav-link { font-weight: 500; transition: color 0.2s; }
+    .nav-link.active { color: #007aff; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .mic-button { transition: all 0.2s; }
+    .mic-button:active { transform: scale(0.95); }
+    .recording { animation: pulse 1.5s infinite; background-color: #ff3b30; }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+    <h1 class="text-2xl font-semibold mb-6 text-center">Ovozli va matnli kiritish (Google TTS)</h1>
+
+    <!-- Walkie‑Talkie -->
+    <div class="ios-card p-6 mb-8 text-center">
+      <div class="flex justify-center mb-4">
+        <button id="pttButton" class="bg-red-500 hover:bg-red-600 text-white w-32 h-32 rounded-full flex items-center justify-center text-3xl shadow-lg active:scale-95">
+          🎙️
+        </button>
+      </div>
+      <p id="pttStatus" class="text-sm text-gray-500">Gapirish uchun tugmani bosib turing</p>
+    </div>
+
+    <!-- STT (speech to text) + echo -->
+    <div class="ios-card p-6 mb-8 text-center">
+      <div class="flex justify-center mb-6">
+        <button id="micToggle" class="mic-button bg-[#007AFF] hover:bg-blue-600 text-white w-24 h-24 rounded-full flex items-center justify-center text-4xl shadow-lg">
+          🎤
+        </button>
+      </div>
+      <p id="status" class="text-sm text-gray-500 mb-4">Mikrafonni yoqish uchun tugmani bosing</p>
+      <div id="result" class="bg-gray-100 rounded-xl p-4 text-left text-gray-800 min-h-[100px] whitespace-pre-wrap break-words mb-4">
+        <span class="text-gray-400">Bu yerda aytgan so‘zlaringiz paydo bo‘ladi...</span>
+      </div>
+    </div>
+
+    <!-- Manual text input -->
+    <div class="ios-card p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-3">✍️ Qo‘lda yozish</h2>
+      <textarea id="manualText" rows="3" class="w-full bg-gray-100 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/50" placeholder="Eslatma matnini shu yerga yozing..."></textarea>
+      <button id="saveManualBtn" class="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium">Matnni saqlash</button>
+    </div>
+
+    <!-- Toggle for reading others' messages -->
+    <div class="ios-card p-4 mb-6 flex justify-between items-center">
+      <span class="text-sm font-medium text-gray-700">🔊 Boshqalarning matnli xabarlarini ovoz bilan o‘qish</span>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="speakToggle" class="sr-only peer">
+        <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#34C759]"></div>
+      </label>
+    </div>
+
+    <h2 class="text-xl font-semibold mb-4">Hamma foydalanuvchilar bilan bo‘lingan eslatmalar</h2>
+    <div class="ios-card overflow-hidden">
+      <div id="notesList" class="divide-y divide-gray-100"></div>
+      <div class="p-4 bg-gray-50 border-t">
+        <button id="clearAllBtn" class="text-red-500 text-sm font-medium hover:underline">Hammasini tozalash</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Socket ----------
+    const socket = io();
+
+    // ---------- TTS using Google Translate (via server proxy) ----------
+    async function speakWithGoogleTTS(text) {
+      if (!text.trim()) return;
+      try {
+        const response = await fetch('/api/tts-google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, lang: 'uz' })
+        });
+        if (!response.ok) {
+          const err = await response.json();
+          console.error('Google TTS error:', err);
+          throw new Error(err.error || 'TTS failed');
+        }
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+        audio.onended = () => URL.revokeObjectURL(audioUrl);
+      } catch (err) {
+        console.error('TTS fetch error:', err);
+        // Fallback to browser speech synthesis if Google fails
+        speakWithBrowser(text);
+      }
+    }
+
+    // Fallback browser TTS (just in case)
+    function speakWithBrowser(text) {
+      if (!window.speechSynthesis) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'uz-UZ';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.2;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // ---------- Walkie‑Talkie ----------
+    let mediaRecorder;
+    const pttButton = document.getElementById('pttButton');
+    const pttStatus = document.getElementById('pttStatus');
+
+    async function initMediaRecorder() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            event.data.arrayBuffer().then(buffer => socket.emit('voice-chunk', buffer));
+          }
+        };
+        mediaRecorder.onstop = () => socket.emit('stop-voice');
+      } catch (err) {
+        pttStatus.innerText = '❌ Mikrofonga ruxsat kerak';
+        pttButton.disabled = true;
+      }
+    }
+    initMediaRecorder();
+
+    pttButton.addEventListener('mousedown', () => {
+      if (mediaRecorder && mediaRecorder.state === 'inactive') {
+        mediaRecorder.start(250);
+        pttButton.classList.add('recording');
+        pttButton.style.backgroundColor = '#ff3b30';
+        pttStatus.innerText = '🎙️ Gapiryapsiz... (qo‘yib yuboring)';
+      }
+    });
+    pttButton.addEventListener('mouseup', () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        pttButton.classList.remove('recording');
+        pttButton.style.backgroundColor = '#dc2626';
+        pttStatus.innerText = 'Gapirish uchun tugmani bosib turing';
+      }
+    });
+    // Touch support for mobile
+    pttButton.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (mediaRecorder && mediaRecorder.state === 'inactive') {
+        mediaRecorder.start(250);
+        pttButton.classList.add('recording');
+        pttButton.style.backgroundColor = '#ff3b30';
+        pttStatus.innerText = '🎙️ Gapiryapsiz...';
+      }
+    });
+    pttButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        pttButton.classList.remove('recording');
+        pttButton.style.backgroundColor = '#dc2626';
+        pttStatus.innerText = 'Gapirish uchun tugmani bosib turing';
+      }
+    });
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let sourceNode = null;
+    socket.on('audio-stream', async (arrayBuffer) => {
+      if (!audioContext) return;
+      try {
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        if (sourceNode) sourceNode.stop();
+        sourceNode = audioContext.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+        sourceNode.connect(audioContext.destination);
+        sourceNode.start();
+      } catch (err) { console.error('Playback error:', err); }
+    });
+    socket.on('audio-stopped', () => { if (sourceNode) sourceNode.stop(); });
+
+    // ---------- Speech Recognition (STT) ----------
+    let recognition = null;
+    let isListeningMic = false;
+    let currentTranscript = '';
+    let skipNextSpeak = false;
+
+    const micToggle = document.getElementById('micToggle');
+    const statusDiv = document.getElementById('status');
+    const resultDiv = document.getElementById('result');
+    const manualText = document.getElementById('manualText');
+    const saveManualBtn = document.getElementById('saveManualBtn');
+    const notesListDiv = document.getElementById('notesList');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const speakToggle = document.getElementById('speakToggle');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      statusDiv.innerText = "⚠️ Brauzeringiz ovozni tanib olishni qo‘llab-quvvatlamaydi. Matnli kiritishdan foydalaning.";
+      micToggle.disabled = true;
+    } else {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'uz-UZ';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+
+      recognition.onstart = () => {
+        isListeningMic = true;
+        statusDiv.innerText = "🎙️ Aytayotganingizni eshityapman... (to‘xtatish uchun yana tugmani bosing)";
+        micToggle.classList.add('recording');
+        micToggle.style.backgroundColor = '#ff3b30';
+        micToggle.innerHTML = '⏹️';
+        currentTranscript = '';
+        resultDiv.innerHTML = '';
+      };
+
+      recognition.onresult = (event) => {
+        let interim = '', final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) final += transcript + ' ';
+          else interim += transcript;
+        }
+        if (final) currentTranscript += final;
+        resultDiv.innerHTML = `<span class="font-medium">${currentTranscript}</span>${interim ? `<span class="text-gray-400 italic"> ${interim}</span>` : ''}`;
+      };
+
+      recognition.onerror = (event) => {
+        console.error('STT error:', event.error);
+        statusDiv.innerText = `Xatolik: ${event.error}`;
+        stopListeningMic();
+      };
+      recognition.onend = stopListeningMic;
+    }
+
+    function startListeningMic() {
+      if (recognition && !isListeningMic) recognition.start();
+    }
+
+    async function stopListeningMic() {
+      if (recognition && isListeningMic) recognition.stop();
+      isListeningMic = false;
+      statusDiv.innerText = "Mikrafon o‘chirildi. Yangi eslatma uchun tugmani bosing.";
+      micToggle.classList.remove('recording');
+      micToggle.style.backgroundColor = '#007AFF';
+      micToggle.innerHTML = '🎤';
+
+      if (currentTranscript.trim()) {
+        const textToEcho = currentTranscript.trim();
+        skipNextSpeak = true;
+        await speakWithGoogleTTS(textToEcho);
+        setTimeout(() => { skipNextSpeak = false; }, 2000);
+        addNote(textToEcho);
+        currentTranscript = '';
+        resultDiv.innerHTML = '<span class="text-gray-400">Aytgan so‘zlaringiz saqlandi va ovoz bilan qaytarildi.</span>';
+      }
+    }
+
+    micToggle.addEventListener('click', () => {
+      if (isListeningMic) stopListeningMic();
+      else startListeningMic();
+    });
+
+    // ---------- Notes ----------
+    function addNote(text) {
+      if (!text.trim()) return;
+      socket.emit('new-note', { text: text.trim() });
+    }
+
+    let localNotes = [];
+    function renderNotes() {
+      notesListDiv.innerHTML = '';
+      if (!localNotes.length) {
+        notesListDiv.innerHTML = '<div class="p-4 text-center text-gray-400">Hozircha hech qanday eslatma yo‘q</div>';
+        return;
+      }
+      localNotes.forEach(note => {
+        const div = document.createElement('div');
+        div.className = "p-4 hover:bg-gray-50 transition-colors";
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <p class="text-gray-800 text-sm">${escapeHtml(note.text)}</p>
+              <p class="text-xs text-gray-400 mt-1">${note.date}</p>
+            </div>
+            <button onclick="deleteNote(${note.id})" class="text-red-500 text-sm ml-3">🗑️</button>
+          </div>
+        `;
+        notesListDiv.appendChild(div);
+      });
+    }
+
+    function deleteNote(id) { socket.emit('delete-note', id); }
+    function clearAll() { if (confirm("Barcha eslatmalar o‘chiriladi?")) socket.emit('clear-all'); }
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+    socket.on('initial-notes', (notes) => { localNotes = notes; renderNotes(); });
+    socket.on('note-added', async (note) => {
+      localNotes.unshift(note);
+      renderNotes();
+      if (speakToggle.checked && !skipNextSpeak) {
+        await speakWithGoogleTTS(note.text);
+      }
+    });
+    socket.on('note-deleted', (id) => { localNotes = localNotes.filter(n => n.id !== id); renderNotes(); });
+    socket.on('all-cleared', () => { localNotes = []; renderNotes(); });
+
+    saveManualBtn.addEventListener('click', async () => {
+      const text = manualText.value.trim();
+      if (text) {
+        addNote(text);
+        manualText.value = '';
+        if (speakToggle.checked) await speakWithGoogleTTS(text);
+      } else alert("Matn kiriting!");
+    });
+    clearAllBtn.addEventListener('click', clearAll);
+    window.deleteNote = deleteNote;
+  </script>
+</body>
+</html>

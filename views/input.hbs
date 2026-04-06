@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | Boshqaruv</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; }
+    .ios-button:active { transform: scale(0.96); }
+    .ios-input, .ios-select { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
+    .ios-input:focus, .ios-select:focus { border-color: #007aff; outline: none; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
+    @media (max-width: 640px) { .ranking-table th, .ranking-table td { font-size: 0.7rem; padding: 0.5rem 0.3rem; } }
+    .loader { border: 2px solid #f3f3f3; border-top: 2px solid #007aff; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; margin-right: 6px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* Yurak urgandek blinking */
+    @keyframes heartbeat {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .heartbeat {
+      animation: heartbeat 1s ease-in-out infinite;
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="pt-20 pb-8 px-4 max-w-7xl mx-auto">
+  <div class="ios-card p-5 mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Mahsulotlar ombori</h1>
+    <p class="text-gray-500 text-sm mt-1">1–18 band, Upakovka, Dazmol — to‘liq boshqaruv</p>
+    <div class="flex gap-3 mt-4">
+      <button id="noteBtn" class="ios-button bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-yellow-100">📝 Eslatma</button>
+      <button id="generateSampleBtn" class="ios-button bg-indigo-50 border border-indigo-200 text-indigo-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-100">📋 Namuna (25 ta)</button>
+    </div>
+  </div>
+
+  <div class="ios-card p-5 mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
+      <span class="w-1.5 h-5 bg-blue-500 rounded-full"></span>
+      <span id="formTitle">➕ Yangi mahsulot qo‘shish</span>
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Mahsulot turi *</label>
+        <select id="productTypeSelect" class="ios-select w-full px-3 py-2 text-sm">
+          <option value="1-band">1-band</option><option value="2-band">2-band</option><option value="3-band">3-band</option>
+          <option value="4-band">4-band</option><option value="5-band">5-band</option><option value="6-band">6-band</option>
+          <option value="7-band">7-band</option><option value="8-band">8-band</option><option value="9-band">9-band</option>
+          <option value="10-band">10-band</option><option value="11-band">11-band</option><option value="12-band">12-band</option>
+          <option value="13-band">13-band</option><option value="14-band">14-band</option><option value="15-band">15-band</option>
+          <option value="16-band">16-band</option><option value="17-band">17-band</option><option value="18-band">18-band</option>
+          <option value="Upakovka">Upakovka</option><option value="Dazmol">Dazmol</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Miqdori (dona) *</label>
+        <input type="number" id="quantityInput" min="1" step="1" value="" class="ios-input w-full px-3 py-2 text-sm">
+      </div>
+      <div class="flex gap-2 items-end">
+        <button id="submitBtn" class="ios-button bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 shadow-md flex-1 flex items-center justify-center gap-2">✨ Qo‘shish</button>
+        <button id="cancelEditBtn" class="ios-button bg-gray-200 text-gray-700 py-2 px-4 hidden">Bekor</button>
+      </div>
+    </div>
+    <p class="text-xs text-gray-400 mt-3">* Maʼlumotlar bazada saqlanadi</p>
+  </div>
+
+  <div class="flex justify-between items-center mb-3">
+    <div class="bg-white/80 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 shadow-sm">📊 Jami: <span id="totalCountSpan" class="font-bold text-blue-600">0</span></div>
+    <div class="text-sm text-gray-500">📄 20 ta / sahifa</div>
+  </div>
+
+  <div class="ios-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-gray-50">
+          <th class="px-4 py-3 text-xs font-semibold">#</th>
+          <th>Mahsulot turi</th>
+          <th>Miqdori</th>
+          <th>Qo‘shilgan vaqt</th>
+          <th class="text-right">Amallar</th>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="bg-gray-50 px-4 py-3 border-t flex flex-wrap justify-between items-center gap-2">
+      <div class="text-sm text-gray-600"><span id="pageInfo">1</span> / <span id="totalPagesSpan">1</span> sahifa</div>
+      <div id="paginationContainer" class="flex gap-1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Note Modal -->
+<div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">📝 Eslatma</h3>
+      <button id="closeNoteModal" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    </div>
+    <textarea id="noteText" rows="4" class="w-full bg-gray-50 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-yellow-500/50 mb-4" placeholder="Eslatma matnini shu yerga yozing..."></textarea>
+    <div class="flex justify-end gap-2">
+      <button id="saveNoteBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full text-sm font-medium">Saqlash</button>
+      <button id="clearNoteBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-medium">Tozalash</button>
+    </div>
+    <div id="savedNotes" class="mt-4 max-h-40 overflow-y-auto"></div>
+  </div>
+</div>
+
+<script>
+  const ALL_TYPES = [
+    "1-band","2-band","3-band","4-band","5-band","6-band","7-band","8-band",
+    "9-band","10-band","11-band","12-band","13-band","14-band","15-band",
+    "16-band","17-band","18-band","Upakovka","Dazmol"
+  ];
+  let items = [];
+  let currentPage = 1;
+  const ITEMS_PER_PAGE = 20;
+  let editingId = null;
+
+  const productTypeSelect = document.getElementById('productTypeSelect');
+  const quantityInput = document.getElementById('quantityInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const formTitleSpan = document.getElementById('formTitle');
+  const tableBody = document.getElementById('tableBody');
+  const paginationContainer = document.getElementById('paginationContainer');
+  const totalCountSpan = document.getElementById('totalCountSpan');
+  const pageInfoSpan = document.getElementById('pageInfo');
+  const totalPagesSpan = document.getElementById('totalPagesSpan');
+  const generateSampleBtn = document.getElementById('generateSampleBtn');
+  const noteBtn = document.getElementById('noteBtn');
+  const noteModal = document.getElementById('noteModal');
+  const closeNoteModal = document.getElementById('closeNoteModal');
+  const noteText = document.getElementById('noteText');
+  const saveNoteBtn = document.getElementById('saveNoteBtn');
+  const clearNoteBtn = document.getElementById('clearNoteBtn');
+  const savedNotes = document.getElementById('savedNotes');
+
+  // API calls (unchanged)
+  async function fetchItems() {
+    const res = await fetch('/api/productmanager');
+    items = await res.json();
+    renderAll();
+  }
+
+  async function addItemToAPI(item) {
+    const res = await fetch('/api/productmanager', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item)
+    });
+    if (!res.ok) throw new Error('Server error');
+    return await res.json();
+  }
+
+  async function updateItemInAPI(id, updatedItem) {
+    const res = await fetch(`/api/productmanager/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedItem)
+    });
+    if (!res.ok) throw new Error('Update failed');
+    return await res.json();
+  }
+
+  async function deleteItemFromAPI(id) {
+    await fetch(`/api/productmanager/${id}`, { method: 'DELETE' });
+  }
+
+  async function generateSampleData() {
+    for (let i = 1; i <= 25; i++) {
+      const productType = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+      const quantity = Math.floor(Math.random() * 200) + 1;
+      await addItemToAPI({ productType, quantity });
+    }
+    fetchItems();
+    showTemporaryMessage(`${25} ta namuna qo‘shildi`, 'green');
+  }
+
+  // Set button loading state to prevent duplicate submissions
+  function setButtonLoading(loading, text = null) {
+    if (loading) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+      submitBtn.innerHTML = '<span class="loader"></span> Saqlanmoqda...';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+      submitBtn.innerHTML = editingId ? '✏️ Yangilash' : '✨ Qo‘shish';
+    }
+    if (text) submitBtn.innerHTML = text;
+  }
+
+  async function addItem() {
+    const productType = productTypeSelect.value;
+    const quantity = parseInt(quantityInput.value.trim(), 10);
+    if (isNaN(quantity) || quantity <= 0) {
+      quantityInput.classList.add('heartbeat');
+      setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
+      return false;
+    }
+    quantityInput.classList.remove('heartbeat');
+    setButtonLoading(true);
+    try {
+      await addItemToAPI({ productType, quantity });
+      await fetchItems();
+      resetFormToAddMode();
+      showTemporaryMessage("✅ Yangi mahsulot qo‘shildi", 'green');
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("Saqlashda xatolik yuz berdi. Qayta urinib ko‘ring.");
+      return false;
+    } finally {
+      setButtonLoading(false);
+    }
+  }
+
+  async function updateItem() {
+    if (!editingId) return false;
+    const productType = productTypeSelect.value;
+    const quantity = parseInt(quantityInput.value.trim(), 10);
+    if (isNaN(quantity) || quantity <= 0) {
+      quantityInput.classList.add('heartbeat');
+      setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
+      return false;
+    }
+    quantityInput.classList.remove('heartbeat');
+    setButtonLoading(true);
+    try {
+      await updateItemInAPI(editingId, { productType, quantity });
+      await fetchItems();
+      resetFormToAddMode();
+      showTemporaryMessage("✏️ Mahsulot tahrirlandi", 'blue');
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("Yangilashda xatolik yuz berdi.");
+      return false;
+    } finally {
+      setButtonLoading(false);
+    }
+  }
+
+  async function deleteItemById(id) {
+    if (!confirm("O‘chirishni tasdiqlaysizmi?")) return;
+    setButtonLoading(true);
+    try {
+      await deleteItemFromAPI(id);
+      if (editingId === id) resetFormToAddMode();
+      await fetchItems();
+      showTemporaryMessage("🗑 Yozuv o‘chirildi", 'orange');
+    } catch (err) {
+      console.error(err);
+      alert("O‘chirishda xatolik yuz berdi.");
+    } finally {
+      setButtonLoading(false);
+    }
+  }
+
+  function startEditItem(id) {
+    const item = items.find(i => i._id === id);
+    if (!item) return;
+    editingId = id;
+    productTypeSelect.value = item.productType;
+    quantityInput.value = item.quantity;
+    submitBtn.innerHTML = "✏️ Yangilash";
+    submitBtn.classList.remove('bg-blue-600','hover:bg-blue-700');
+    submitBtn.classList.add('bg-emerald-600','hover:bg-emerald-700');
+    cancelEditBtn.classList.remove('hidden');
+    formTitleSpan.innerHTML = `✏️ Tahrirlash (ID: ${item._id.toString().slice(-6)})`;
+    document.querySelector('.ios-card').scrollIntoView({ behavior:'smooth', block:'center' });
+  }
+
+  function resetFormToAddMode() {
+    editingId = null;
+    quantityInput.value = "";
+    submitBtn.innerHTML = "✨ Qo‘shish";
+    submitBtn.classList.remove('bg-emerald-600','hover:bg-emerald-700');
+    submitBtn.classList.add('bg-blue-600','hover:bg-blue-700');
+    cancelEditBtn.classList.add('hidden');
+    formTitleSpan.innerHTML = "➕ Yangi mahsulot qo‘shish";
+  }
+
+  // Rendering functions (unchanged)
+  function getProductTypeBadge(type) {
+    if (type.includes('band')) return `<span class="inline-flex gap-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">🔧 ${type}</span>`;
+    if (type === 'Upakovka') return `<span class="inline-flex gap-1 bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">📦 ${type}</span>`;
+    if (type === 'Dazmol') return `<span class="inline-flex gap-1 bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-medium">🔥 ${type}</span>`;
+    return `<span class="inline-flex gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">📌 ${type}</span>`;
+  }
+
+  function formatDateTime(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+
+  function renderTable() {
+    const total = items.length, totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE, pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+    if (!pageItems.length) {
+      tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-400">📭 Hech qanday mahsulot mavjud emas.</td></tr>`;
+      return;
+    }
+    let html = '';
+    pageItems.forEach((item, idx) => {
+      const serial = start + idx + 1;
+      html += `<tr class="hover:bg-gray-50"><td class="px-3 py-2 text-xs text-gray-500">${serial}<td class="px-3 py-2 text-xs">${getProductTypeBadge(item.productType)}<td class="px-3 py-2 text-xs font-semibold">${item.quantity}<td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">${formatDateTime(item.createdAt)}<td class="px-3 py-2 text-right action-buttons whitespace-nowrap"><button class="edit-item-btn text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs hover:bg-blue-100" data-id="${item._id}">✏️</button><button class="delete-item-btn text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs hover:bg-red-100 ml-1" data-id="${item._id}">🗑️</button></td></tr>`;
+    });
+    tableBody.innerHTML = html;
+  }
+
+  function renderPagination() {
+    const total = items.length, totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+    totalPagesSpan.innerText = totalPages;
+    pageInfoSpan.innerText = currentPage;
+    totalCountSpan.innerText = total;
+    if (totalPages <= 1) {
+      paginationContainer.innerHTML = '<span class="text-gray-400 text-xs">Faqat bitta sahifa</span>';
+      return;
+    }
+    let html = `<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="prev">«</button>`;
+    let startPage = Math.max(1, currentPage - 2), endPage = Math.min(totalPages, currentPage + 2);
+    if (endPage - startPage < 4) {
+      if (startPage === 1) endPage = Math.min(totalPages, startPage + 4);
+      if (endPage === totalPages) startPage = Math.max(1, endPage - 4);
+    }
+    if (startPage > 1) {
+      html += `<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="1">1</button>`;
+      if (startPage > 2) html += `<span class="px-1 text-gray-400">...</span>`;
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="page-number-btn px-2 py-1 rounded-lg border text-xs ${i === currentPage ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 hover:bg-gray-100'}" data-page="${i}">${i}</button>`;
+    }
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) html += `<span class="px-1 text-gray-400">...</span>`;
+      html += `<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="${totalPages}">${totalPages}</button>`;
+    }
+    html += `<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="next">»</button>`;
+    paginationContainer.innerHTML = html;
+    document.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const page = btn.dataset.page;
+        if (page === 'prev' && currentPage > 1) { currentPage--; renderAll(); }
+        else if (page === 'next' && currentPage < totalPages) { currentPage++; renderAll(); }
+        else { let p = parseInt(page); if (!isNaN(p) && p !== currentPage && p >= 1 && p <= totalPages) { currentPage = p; renderAll(); } }
+      });
+    });
+  }
+
+  function renderAll() { renderTable(); renderPagination(); }
+
+  function showTemporaryMessage(msg, color = 'green') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-4 py-2 rounded-full text-xs shadow-lg z-50`;
+    toast.innerText = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }
+
+  // Note functionality
+  function loadNotes() {
+    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
+    savedNotes.innerHTML = notes.map((note, index) => 
+      `<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center">
+        <span>${escapeHtml(note.text)}</span>
+        <small class="text-gray-500">${new Date(note.date).toLocaleString('uz-UZ')}</small>
+        <button onclick="deleteNote(${index})" class="text-red-500 ml-2">✖</button>
+      </div>`
+    ).join('');
+  }
+
+  function saveNote(text) {
+    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
+    notes.push({ text, date: new Date().toISOString() });
+    localStorage.setItem('inputNotes', JSON.stringify(notes));
+    loadNotes();
+  }
+
+  function deleteNote(index) {
+    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
+    notes.splice(index, 1);
+    localStorage.setItem('inputNotes', JSON.stringify(notes));
+    loadNotes();
+  }
+
+  window.deleteNote = deleteNote;
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  function bindEvents() {
+    submitBtn.onclick = async (e) => {
+      e.preventDefault();
+      // Prevent double submission
+      if (submitBtn.disabled) return;
+      editingId ? await updateItem() : await addItem();
+    };
+    cancelEditBtn.onclick = () => { resetFormToAddMode(); showTemporaryMessage("Tahrirlash bekor qilindi", 'gray'); };
+    generateSampleBtn.onclick = generateSampleData;
+    tableBody.onclick = (e) => {
+      const edit = e.target.closest('.edit-item-btn'), del = e.target.closest('.delete-item-btn');
+      if (edit) startEditItem(edit.dataset.id);
+      if (del) deleteItemById(del.dataset.id);
+    };
+
+    // Note events
+    noteBtn.onclick = () => {
+      noteModal.classList.remove('hidden');
+      loadNotes();
+    };
+    closeNoteModal.onclick = () => {
+      noteModal.classList.add('hidden');
+    };
+    saveNoteBtn.onclick = () => {
+      const text = noteText.value.trim();
+      if (text) {
+        saveNote(text);
+        noteText.value = '';
+      }
+    };
+    clearNoteBtn.onclick = () => {
+      localStorage.removeItem('inputNotes');
+      loadNotes();
+    };
+    window.onclick = (e) => {
+      if (e.target === noteModal) {
+        noteModal.classList.add('hidden');
+      }
+    };
+
+    // Remove heartbeat when user types
+    quantityInput.oninput = () => {
+      quantityInput.classList.remove('heartbeat');
+    };
+  }
+
+  function init() { fetchItems(); bindEvents(); resetFormToAddMode(); }
+  init();
+</script>
+</body>
+</html>
