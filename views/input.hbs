@@ -15,18 +15,8 @@
     @media (max-width: 640px) { .ranking-table th, .ranking-table td { font-size: 0.7rem; padding: 0.5rem 0.3rem; } }
     .loader { border: 2px solid #f3f3f3; border-top: 2px solid #007aff; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; margin-right: 6px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    /* Yurak urgandek blinking */
-    @keyframes heartbeat {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.8; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .heartbeat {
-      animation: heartbeat 1s ease-in-out infinite;
-      border-color: #ef4444 !important;
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
-    }
+    @keyframes heartbeat { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+    .heartbeat { animation: heartbeat 1s ease-in-out infinite; border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.2) !important; }
   </style>
 </head>
 <body class="antialiased">
@@ -36,7 +26,7 @@
 <div class="pt-20 pb-8 px-4 max-w-7xl mx-auto">
   <div class="ios-card p-5 mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Mahsulotlar ombori</h1>
-    <p class="text-gray-500 text-sm mt-1">1–18 band, Upakovka, Dazmol — to‘liq boshqaruv</p>
+    <p class="text-gray-500 text-sm mt-1">1–18 band, Upakovka, Dazmol — to'liq boshqaruv</p>
     <div class="flex gap-3 mt-4">
       <button id="noteBtn" class="ios-button bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-yellow-100">📝 Eslatma</button>
       <button id="generateSampleBtn" class="ios-button bg-indigo-50 border border-indigo-200 text-indigo-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-100">📋 Namuna (25 ta)</button>
@@ -46,7 +36,7 @@
   <div class="ios-card p-5 mb-6">
     <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
       <span class="w-1.5 h-5 bg-blue-500 rounded-full"></span>
-      <span id="formTitle">➕ Yangi mahsulot qo‘shish</span>
+      <span id="formTitle">➕ Yangi mahsulot qo'shish</span>
     </h2>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div>
@@ -66,7 +56,7 @@
         <input type="number" id="quantityInput" min="1" step="1" value="" class="ios-input w-full px-3 py-2 text-sm">
       </div>
       <div class="flex gap-2 items-end">
-        <button id="submitBtn" class="ios-button bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 shadow-md flex-1 flex items-center justify-center gap-2">✨ Qo‘shish</button>
+        <button id="submitBtn" class="ios-button bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 shadow-md flex-1 flex items-center justify-center gap-2">✨ Qo'shish</button>
         <button id="cancelEditBtn" class="ios-button bg-gray-200 text-gray-700 py-2 px-4 hidden">Bekor</button>
       </div>
     </div>
@@ -81,12 +71,15 @@
   <div class="ios-card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
+        <!-- ✅ FIX 4: thead ichida <tr> qo'shildi -->
         <thead class="bg-gray-50">
-          <th class="px-4 py-3 text-xs font-semibold">#</th>
-          <th>Mahsulot turi</th>
-          <th>Miqdori</th>
-          <th>Qo‘shilgan vaqt</th>
-          <th class="text-right">Amallar</th>
+          <tr>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Mahsulot turi</th>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Miqdori</th>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Qo'shilgan vaqt</th>
+            <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Amallar</th>
+          </tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
@@ -126,25 +119,25 @@
   let editingId = null;
 
   const productTypeSelect = document.getElementById('productTypeSelect');
-  const quantityInput = document.getElementById('quantityInput');
-  const submitBtn = document.getElementById('submitBtn');
-  const cancelEditBtn = document.getElementById('cancelEditBtn');
-  const formTitleSpan = document.getElementById('formTitle');
-  const tableBody = document.getElementById('tableBody');
+  const quantityInput     = document.getElementById('quantityInput');
+  const submitBtn         = document.getElementById('submitBtn');
+  const cancelEditBtn     = document.getElementById('cancelEditBtn');
+  const formTitleSpan     = document.getElementById('formTitle');
+  const tableBody         = document.getElementById('tableBody');
   const paginationContainer = document.getElementById('paginationContainer');
-  const totalCountSpan = document.getElementById('totalCountSpan');
-  const pageInfoSpan = document.getElementById('pageInfo');
-  const totalPagesSpan = document.getElementById('totalPagesSpan');
+  const totalCountSpan    = document.getElementById('totalCountSpan');
+  const pageInfoSpan      = document.getElementById('pageInfo');
+  const totalPagesSpan    = document.getElementById('totalPagesSpan');
   const generateSampleBtn = document.getElementById('generateSampleBtn');
-  const noteBtn = document.getElementById('noteBtn');
-  const noteModal = document.getElementById('noteModal');
-  const closeNoteModal = document.getElementById('closeNoteModal');
-  const noteText = document.getElementById('noteText');
-  const saveNoteBtn = document.getElementById('saveNoteBtn');
-  const clearNoteBtn = document.getElementById('clearNoteBtn');
-  const savedNotes = document.getElementById('savedNotes');
+  const noteBtn           = document.getElementById('noteBtn');
+  const noteModal         = document.getElementById('noteModal');
+  const closeNoteModal    = document.getElementById('closeNoteModal');
+  const noteText          = document.getElementById('noteText');
+  const saveNoteBtn       = document.getElementById('saveNoteBtn');
+  const clearNoteBtn      = document.getElementById('clearNoteBtn');
+  const savedNotes        = document.getElementById('savedNotes');
 
-  // API calls (unchanged)
+  // API
   async function fetchItems() {
     const res = await fetch('/api/productmanager');
     items = await res.json();
@@ -181,12 +174,11 @@
       const quantity = Math.floor(Math.random() * 200) + 1;
       await addItemToAPI({ productType, quantity });
     }
-    fetchItems();
-    showTemporaryMessage(`${25} ta namuna qo‘shildi`, 'green');
+    await fetchItems();
+    showTemporaryMessage('25 ta namuna qo\'shildi', 'green');
   }
 
-  // Set button loading state to prevent duplicate submissions
-  function setButtonLoading(loading, text = null) {
+  function setButtonLoading(loading) {
     if (loading) {
       submitBtn.disabled = true;
       submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
@@ -194,9 +186,8 @@
     } else {
       submitBtn.disabled = false;
       submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-      submitBtn.innerHTML = editingId ? '✏️ Yangilash' : '✨ Qo‘shish';
+      submitBtn.innerHTML = editingId ? '✏️ Yangilash' : '✨ Qo\'shish';
     }
-    if (text) submitBtn.innerHTML = text;
   }
 
   async function addItem() {
@@ -205,7 +196,7 @@
     if (isNaN(quantity) || quantity <= 0) {
       quantityInput.classList.add('heartbeat');
       setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
-      return false;
+      return;
     }
     quantityInput.classList.remove('heartbeat');
     setButtonLoading(true);
@@ -213,25 +204,23 @@
       await addItemToAPI({ productType, quantity });
       await fetchItems();
       resetFormToAddMode();
-      showTemporaryMessage("✅ Yangi mahsulot qo‘shildi", 'green');
-      return true;
+      showTemporaryMessage('✅ Yangi mahsulot qo\'shildi', 'green');
     } catch (err) {
       console.error(err);
-      alert("Saqlashda xatolik yuz berdi. Qayta urinib ko‘ring.");
-      return false;
+      alert('Saqlashda xatolik yuz berdi. Qayta urinib ko\'ring.');
     } finally {
       setButtonLoading(false);
     }
   }
 
   async function updateItem() {
-    if (!editingId) return false;
+    if (!editingId) return;
     const productType = productTypeSelect.value;
     const quantity = parseInt(quantityInput.value.trim(), 10);
     if (isNaN(quantity) || quantity <= 0) {
       quantityInput.classList.add('heartbeat');
       setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
-      return false;
+      return;
     }
     quantityInput.classList.remove('heartbeat');
     setButtonLoading(true);
@@ -239,30 +228,25 @@
       await updateItemInAPI(editingId, { productType, quantity });
       await fetchItems();
       resetFormToAddMode();
-      showTemporaryMessage("✏️ Mahsulot tahrirlandi", 'blue');
-      return true;
+      showTemporaryMessage('✏️ Mahsulot tahrirlandi', 'blue');
     } catch (err) {
       console.error(err);
-      alert("Yangilashda xatolik yuz berdi.");
-      return false;
+      alert('Yangilashda xatolik yuz berdi.');
     } finally {
       setButtonLoading(false);
     }
   }
 
   async function deleteItemById(id) {
-    if (!confirm("O‘chirishni tasdiqlaysizmi?")) return;
-    setButtonLoading(true);
+    if (!confirm('O\'chirishni tasdiqlaysizmi?')) return;
     try {
       await deleteItemFromAPI(id);
       if (editingId === id) resetFormToAddMode();
       await fetchItems();
-      showTemporaryMessage("🗑 Yozuv o‘chirildi", 'orange');
+      showTemporaryMessage('🗑 Yozuv o\'chirildi', 'orange');
     } catch (err) {
       console.error(err);
-      alert("O‘chirishda xatolik yuz berdi.");
-    } finally {
-      setButtonLoading(false);
+      alert('O\'chirishda xatolik yuz berdi.');
     }
   }
 
@@ -272,185 +256,204 @@
     editingId = id;
     productTypeSelect.value = item.productType;
     quantityInput.value = item.quantity;
-    submitBtn.innerHTML = "✏️ Yangilash";
+    submitBtn.innerHTML = '✏️ Yangilash';
     submitBtn.classList.remove('bg-blue-600','hover:bg-blue-700');
     submitBtn.classList.add('bg-emerald-600','hover:bg-emerald-700');
     cancelEditBtn.classList.remove('hidden');
     formTitleSpan.innerHTML = `✏️ Tahrirlash (ID: ${item._id.toString().slice(-6)})`;
-    document.querySelector('.ios-card').scrollIntoView({ behavior:'smooth', block:'center' });
+    document.querySelector('.ios-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function resetFormToAddMode() {
     editingId = null;
-    quantityInput.value = "";
-    submitBtn.innerHTML = "✨ Qo‘shish";
+    quantityInput.value = '';
+    submitBtn.innerHTML = '✨ Qo\'shish';
     submitBtn.classList.remove('bg-emerald-600','hover:bg-emerald-700');
     submitBtn.classList.add('bg-blue-600','hover:bg-blue-700');
     cancelEditBtn.classList.add('hidden');
-    formTitleSpan.innerHTML = "➕ Yangi mahsulot qo‘shish";
+    formTitleSpan.innerHTML = '➕ Yangi mahsulot qo\'shish';
   }
 
-  // Rendering functions (unchanged)
   function getProductTypeBadge(type) {
-    if (type.includes('band')) return `<span class="inline-flex gap-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">🔧 ${type}</span>`;
-    if (type === 'Upakovka') return `<span class="inline-flex gap-1 bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">📦 ${type}</span>`;
-    if (type === 'Dazmol') return `<span class="inline-flex gap-1 bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-medium">🔥 ${type}</span>`;
+    if (type.includes('band'))  return `<span class="inline-flex gap-1 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">🔧 ${type}</span>`;
+    if (type === 'Upakovka')    return `<span class="inline-flex gap-1 bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-medium">📦 ${type}</span>`;
+    if (type === 'Dazmol')      return `<span class="inline-flex gap-1 bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-medium">🔥 ${type}</span>`;
     return `<span class="inline-flex gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">📌 ${type}</span>`;
   }
 
   function formatDateTime(iso) {
-    if (!iso) return "—";
+    if (!iso) return '—';
     const d = new Date(iso);
     return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
   function renderTable() {
-    const total = items.length, totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+    const total = items.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
     if (currentPage > totalPages) currentPage = totalPages;
-    const start = (currentPage - 1) * ITEMS_PER_PAGE, pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+
     if (!pageItems.length) {
       tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-400">📭 Hech qanday mahsulot mavjud emas.</td></tr>`;
       return;
     }
-    let html = '';
-    pageItems.forEach((item, idx) => {
-      const serial = start + idx + 1;
-      html += `<tr class="hover:bg-gray-50"><td class="px-3 py-2 text-xs text-gray-500">${serial}<td class="px-3 py-2 text-xs">${getProductTypeBadge(item.productType)}<td class="px-3 py-2 text-xs font-semibold">${item.quantity}<td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">${formatDateTime(item.createdAt)}<td class="px-3 py-2 text-right action-buttons whitespace-nowrap"><button class="edit-item-btn text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs hover:bg-blue-100" data-id="${item._id}">✏️</button><button class="delete-item-btn text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs hover:bg-red-100 ml-1" data-id="${item._id}">🗑️</button></td></tr>`;
-    });
-    tableBody.innerHTML = html;
+
+    tableBody.innerHTML = pageItems.map((item, idx) => `
+      <tr class="hover:bg-gray-50 border-b border-gray-100">
+        <td class="px-3 py-2 text-xs text-gray-500">${start + idx + 1}</td>
+        <td class="px-3 py-2 text-xs">${getProductTypeBadge(item.productType)}</td>
+        <td class="px-3 py-2 text-xs font-semibold">${item.quantity}</td>
+        <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">${formatDateTime(item.createdAt)}</td>
+        <td class="px-3 py-2 text-right whitespace-nowrap">
+          <button class="edit-item-btn text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs hover:bg-blue-100" data-id="${item._id}">✏️</button>
+          <button class="delete-item-btn text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs hover:bg-red-100 ml-1" data-id="${item._id}">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
   }
 
   function renderPagination() {
-    const total = items.length, totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+    const total = items.length;
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
     totalPagesSpan.innerText = totalPages;
-    pageInfoSpan.innerText = currentPage;
+    pageInfoSpan.innerText   = currentPage;
     totalCountSpan.innerText = total;
+
     if (totalPages <= 1) {
       paginationContainer.innerHTML = '<span class="text-gray-400 text-xs">Faqat bitta sahifa</span>';
       return;
     }
-    let html = `<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}" data-page="prev">«</button>`;
-    let startPage = Math.max(1, currentPage - 2), endPage = Math.min(totalPages, currentPage + 2);
-    if (endPage - startPage < 4) {
-      if (startPage === 1) endPage = Math.min(totalPages, startPage + 4);
-      if (endPage === totalPages) startPage = Math.max(1, endPage - 4);
-    }
-    if (startPage > 1) {
-      html += `<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="1">1</button>`;
-      if (startPage > 2) html += `<span class="px-1 text-gray-400">...</span>`;
-    }
-    for (let i = startPage; i <= endPage; i++) {
-      html += `<button class="page-number-btn px-2 py-1 rounded-lg border text-xs ${i === currentPage ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 hover:bg-gray-100'}" data-page="${i}">${i}</button>`;
-    }
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) html += `<span class="px-1 text-gray-400">...</span>`;
-      html += `<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="${totalPages}">${totalPages}</button>`;
-    }
-    html += `<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}" data-page="next">»</button>`;
+
+    let html = `<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage===1?'opacity-50 cursor-not-allowed':''}" data-page="prev">«</button>`;
+    let sp = Math.max(1, currentPage-2), ep = Math.min(totalPages, currentPage+2);
+    if (ep-sp<4) { if(sp===1)ep=Math.min(totalPages,sp+4); if(ep===totalPages)sp=Math.max(1,ep-4); }
+    if (sp>1) { html+=`<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="1">1</button>`; if(sp>2)html+=`<span class="px-1 text-gray-400">...</span>`; }
+    for (let i=sp; i<=ep; i++) html+=`<button class="page-number-btn px-2 py-1 rounded-lg border text-xs ${i===currentPage?'bg-indigo-600 text-white border-indigo-600':'bg-white text-gray-700 hover:bg-gray-100'}" data-page="${i}">${i}</button>`;
+    if (ep<totalPages) { if(ep<totalPages-1)html+=`<span class="px-1 text-gray-400">...</span>`; html+=`<button class="page-number-btn px-2 py-1 rounded-lg border bg-white text-gray-700 hover:bg-gray-100 text-xs" data-page="${totalPages}">${totalPages}</button>`; }
+    html+=`<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage===totalPages?'opacity-50 cursor-not-allowed':''}" data-page="next">»</button>`;
     paginationContainer.innerHTML = html;
-    document.querySelectorAll('[data-page]').forEach(btn => {
+
+    paginationContainer.querySelectorAll('[data-page]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const page = btn.dataset.page;
-        if (page === 'prev' && currentPage > 1) { currentPage--; renderAll(); }
-        else if (page === 'next' && currentPage < totalPages) { currentPage++; renderAll(); }
-        else { let p = parseInt(page); if (!isNaN(p) && p !== currentPage && p >= 1 && p <= totalPages) { currentPage = p; renderAll(); } }
+        const p = btn.dataset.page;
+        const tp = Math.ceil(items.length/ITEMS_PER_PAGE)||1;
+        if (p==='prev'&&currentPage>1) currentPage--;
+        else if (p==='next'&&currentPage<tp) currentPage++;
+        else { const n=parseInt(p); if(!isNaN(n)&&n>=1&&n<=tp) currentPage=n; }
+        renderAll();
       });
     });
   }
 
   function renderAll() { renderTable(); renderPagination(); }
 
-  function showTemporaryMessage(msg, color = 'green') {
+  function showTemporaryMessage(msg, color='green') {
     const toast = document.createElement('div');
     toast.className = `fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-4 py-2 rounded-full text-xs shadow-lg z-50`;
     toast.innerText = msg;
     document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      setTimeout(() => toast.remove(), 300);
-    }, 2000);
+    setTimeout(() => { toast.style.opacity='0'; setTimeout(()=>toast.remove(),300); }, 2000);
   }
 
-  // Note functionality
+  // Notes
   function loadNotes() {
-    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
-    savedNotes.innerHTML = notes.map((note, index) => 
-      `<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center">
-        <span>${escapeHtml(note.text)}</span>
-        <small class="text-gray-500">${new Date(note.date).toLocaleString('uz-UZ')}</small>
-        <button onclick="deleteNote(${index})" class="text-red-500 ml-2">✖</button>
-      </div>`
-    ).join('');
+    const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
+    savedNotes.innerHTML = notes.map((n,i) => `
+      <div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center">
+        <span>${escapeHtml(n.text)}</span>
+        <small class="text-gray-500">${new Date(n.date).toLocaleString('uz-UZ')}</small>
+        <button onclick="deleteNote(${i})" class="text-red-500 ml-2">✖</button>
+      </div>`).join('');
   }
-
   function saveNote(text) {
-    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
+    const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
     notes.push({ text, date: new Date().toISOString() });
     localStorage.setItem('inputNotes', JSON.stringify(notes));
     loadNotes();
   }
-
-  function deleteNote(index) {
-    const notes = JSON.parse(localStorage.getItem('inputNotes') || '[]');
-    notes.splice(index, 1);
+  function deleteNote(i) {
+    const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
+    notes.splice(i,1);
     localStorage.setItem('inputNotes', JSON.stringify(notes));
     loadNotes();
   }
-
   window.deleteNote = deleteNote;
 
   function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+    return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   }
 
   function bindEvents() {
-    submitBtn.onclick = async (e) => {
+    // ✅ Submit — bir marta bind, disable bilan ikki marta bosishdan himoya
+    submitBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      // Prevent double submission
       if (submitBtn.disabled) return;
-      editingId ? await updateItem() : await addItem();
-    };
-    cancelEditBtn.onclick = () => { resetFormToAddMode(); showTemporaryMessage("Tahrirlash bekor qilindi", 'gray'); };
-    generateSampleBtn.onclick = generateSampleData;
-    tableBody.onclick = (e) => {
-      const edit = e.target.closest('.edit-item-btn'), del = e.target.closest('.delete-item-btn');
-      if (edit) startEditItem(edit.dataset.id);
-      if (del) deleteItemById(del.dataset.id);
-    };
+      setButtonLoading(true);
+      try {
+        if (editingId) await updateItem();
+        else await addItem();
+      } finally {
+        // setButtonLoading false addItem/updateItem ichida chaqiriladi,
+        // lekin xatolik bo'lsa ham chiqishi uchun bu yerda ham qo'yamiz
+        if (submitBtn.disabled) setButtonLoading(false);
+      }
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+      resetFormToAddMode();
+      showTemporaryMessage('Tahrirlash bekor qilindi', 'gray');
+    });
+
+    // ✅ FIX 4: generateSampleBtn — faqat bir marta bind, disabled bilan
+    generateSampleBtn.addEventListener('click', async () => {
+      if (generateSampleBtn.disabled) return;
+      generateSampleBtn.disabled = true;
+      generateSampleBtn.innerHTML = '<span class="loader"></span> Qo\'shilmoqda...';
+      try {
+        await generateSampleData();
+      } finally {
+        generateSampleBtn.disabled = false;
+        generateSampleBtn.innerHTML = '📋 Namuna (25 ta)';
+      }
+    });
+
+    // ✅ FIX 4: Event delegation — dinamik edit/delete tugmalari uchun
+    tableBody.addEventListener('click', (e) => {
+      const editBtn   = e.target.closest('.edit-item-btn');
+      const deleteBtn = e.target.closest('.delete-item-btn');
+      if (editBtn)   startEditItem(editBtn.dataset.id);
+      if (deleteBtn) deleteItemById(deleteBtn.dataset.id);
+    });
+
+    // Quantity input — heartbeat o'chirish
+    quantityInput.addEventListener('input', () => {
+      quantityInput.classList.remove('heartbeat');
+    });
 
     // Note events
-    noteBtn.onclick = () => {
-      noteModal.classList.remove('hidden');
-      loadNotes();
-    };
-    closeNoteModal.onclick = () => {
-      noteModal.classList.add('hidden');
-    };
-    saveNoteBtn.onclick = () => {
-      const text = noteText.value.trim();
-      if (text) {
-        saveNote(text);
-        noteText.value = '';
-      }
-    };
-    clearNoteBtn.onclick = () => {
+    noteBtn.addEventListener('click', () => { noteModal.classList.remove('hidden'); loadNotes(); });
+    closeNoteModal.addEventListener('click', () => noteModal.classList.add('hidden'));
+    saveNoteBtn.addEventListener('click', () => {
+      const t = noteText.value.trim();
+      if (t) { saveNote(t); noteText.value = ''; }
+    });
+    clearNoteBtn.addEventListener('click', () => {
       localStorage.removeItem('inputNotes');
       loadNotes();
-    };
-    window.onclick = (e) => {
-      if (e.target === noteModal) {
-        noteModal.classList.add('hidden');
-      }
-    };
-
-    // Remove heartbeat when user types
-    quantityInput.oninput = () => {
-      quantityInput.classList.remove('heartbeat');
-    };
+    });
+    window.addEventListener('click', (e) => {
+      if (e.target === noteModal) noteModal.classList.add('hidden');
+    });
   }
 
-  function init() { fetchItems(); bindEvents(); resetFormToAddMode(); }
+  function init() {
+    fetchItems();
+    bindEvents();
+    resetFormToAddMode();
+  }
+
   init();
 </script>
 </body>

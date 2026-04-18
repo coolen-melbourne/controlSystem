@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* (all existing styles unchanged – keep as is) */
     body { background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
     .navbar { background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
     .nav-link { font-weight: 500; transition: color 0.2s; }
@@ -30,12 +29,8 @@
       50% { box-shadow: 0 0 0 8px rgba(59,130,246,0.2); transform: scale(1.01); }
       100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); transform: scale(1); }
     }
-    .modal-overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:2000;
-    }
-    .modal-content {
-      background:white; border-radius:1.5rem; max-width:90vw; width:900px; max-height:80vh; overflow-y:auto; padding:1.5rem; box-shadow:0 20px 35px -12px rgba(0,0,0,0.3);
-    }
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:2000; }
+    .modal-content { background:white; border-radius:1.5rem; max-width:90vw; width:900px; max-height:80vh; overflow-y:auto; padding:1.5rem; box-shadow:0 20px 35px -12px rgba(0,0,0,0.3); }
     .modal-content h3 { font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:#1e293b; }
     .modal-content table { width:100%; border-collapse:collapse; font-size:0.8rem; }
     .modal-content th, .modal-content td { padding:0.5rem; border-bottom:1px solid #e2e8f0; text-align:left; }
@@ -44,116 +39,42 @@
     .close-modal:hover { color:#ef4444; }
     .thumb-small { width:40px; height:40px; object-fit:cover; border-radius:8px; }
 
-    /* FULLSCREEN OVERLAY – VIDEO BACKGROUND */
-    .fullscreen-overlay {
-      position: fixed; top:0; left:0; width:100%; height:100%; z-index:1000; display:flex; flex-direction:column; padding:1rem; box-sizing:border-box; overflow-y:auto; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; color:#fff;
-    }
+    .fullscreen-overlay { position: fixed; top:0; left:0; width:100%; height:100%; z-index:1000; display:flex; flex-direction:column; padding:1rem; box-sizing:border-box; overflow-y:auto; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; color:#fff; }
     @media (min-width:768px) { .fullscreen-overlay { padding:2rem; } }
-    .fullscreen-overlay #bgVideo {
-      position: fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none;
-    }
-    .fullscreen-overlay .stats-cards-container {
-      display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:1.2rem; margin-bottom:1.5rem; position:relative; z-index:2;
-    }
-    .fullscreen-overlay .stats-card {
-      background:rgba(255,255,255,0.2); backdrop-filter:blur(12px); border-radius:1.5rem; border:1px solid rgba(255,255,255,0.35); box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0.9rem 1.1rem; transition:all 0.2s ease;
-    }
+    .fullscreen-overlay #bgVideo { position: fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none; }
+    .fullscreen-overlay .stats-cards-container { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:1.2rem; margin-bottom:1.5rem; position:relative; z-index:2; }
+    .fullscreen-overlay .stats-card { background:rgba(255,255,255,0.2); backdrop-filter:blur(12px); border-radius:1.5rem; border:1px solid rgba(255,255,255,0.35); box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0.9rem 1.1rem; transition:all 0.2s ease; }
     .fullscreen-overlay .stats-card:hover { background:rgba(255,255,255,0.3); transform:translateY(-2px); border-color:rgba(255,255,255,0.5); }
     .fullscreen-overlay .stats-card h3 { font-size:0.95rem; font-weight:600; margin-bottom:0.6rem; color:white; text-shadow:0 1px 2px rgba(0,0,0,0.2); letter-spacing:0.3px; }
     .fullscreen-overlay .stats-card .stat-row { display:flex; justify-content:space-between; margin-bottom:0.45rem; font-size:0.85rem; }
     .fullscreen-overlay .stats-card .stat-label { color:rgba(255,250,220,0.9); }
     .fullscreen-overlay .stats-card .stat-value { font-weight:700; color:#ffd966; }
-    .fullscreen-overlay .chart-wrapper {
-      position:relative; z-index:2; flex:1; min-height:60vh; display:flex; align-items:center; justify-content:center; margin:1rem 0; background:rgba(0,0,0,0.3); backdrop-filter:blur(8px); border-radius:1.5rem; padding:1rem; border:1px solid rgba(255,255,255,0.25); overflow-y:auto; max-height:80vh;
-    }
-      .fullscreen-overlay canvas { width:100%; height:auto; max-width:100%; max-height:70vh; background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem; box-shadow:0 8px 20px rgba(0,0,0,0.1); }
-    .fullscreen-overlay .close-fullscreen {
-      position:fixed; top:1rem; right:1rem; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:none; border-radius:40px; width:44px; height:44px; font-size:24px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:1001; transition:all 0.2s ease;
-    }
+    .fullscreen-overlay .chart-wrapper { position:relative; z-index:2; flex:1; min-height:60vh; display:flex; align-items:center; justify-content:center; margin:1rem 0; background:rgba(0,0,0,0.3); backdrop-filter:blur(8px); border-radius:1.5rem; padding:1rem; border:1px solid rgba(255,255,255,0.25); overflow-y:auto; max-height:80vh; }
+    .fullscreen-overlay canvas { width:100%; height:auto; max-width:100%; max-height:70vh; background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem; box-shadow:0 8px 20px rgba(0,0,0,0.1); }
+    .fullscreen-overlay .close-fullscreen { position:fixed; top:1rem; right:1rem; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:none; border-radius:40px; width:44px; height:44px; font-size:24px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:1001; transition:all 0.2s ease; }
     .fullscreen-overlay .close-fullscreen:hover { background:rgba(0,0,0,0.8); transform:scale(1.05); }
     @media (min-width:768px) { .fullscreen-overlay .close-fullscreen { top:2rem; right:2rem; } }
-    
-    /* Marquee animatsiyasi */
-    @keyframes marquee {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
-    .marquee-footer {
-      position: fixed; bottom: 0; left: 0; width: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6)); color: #ffd966; padding: 0.5rem 0; text-align: center; z-index: 999; font-weight: 600; overflow: hidden; height: 40px; display: flex; align-items: center; justify-content: center;
-    }
-    .marquee-footer .marquee-text {
-      display: inline-block; animation: marquee 8s linear infinite; white-space: nowrap; padding-left: 100%;
-    }
-    .marquee-footer .marquee-text:hover {
-      animation-play-state: paused;
-    }
-    
-    /* Chiroyli data labels animatsiya */
-    @keyframes pulse-number {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-    .chartjs-datalabels-number {
-      animation: pulse-number 0.6s ease-in-out;
-    }
-    
-    /* Yurak urgandek blinking */
-    @keyframes heartbeat {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.1); opacity: 0.7; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .blinking-band {
-      animation: heartbeat 1s ease-in-out infinite;
-      background-color: #ef4444 !important;
-      border: 2px solid #dc2626;
-    }
-    
-    /* Toast notifications */
-    .toast-container {
-      position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px;
-    }
-    .toast {
-      background: rgba(0,0,0,0.9); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.3s ease;
-    }
-    .toast.show {
-      opacity: 1; transform: translateX(0);
-    }
-    .toast.hide {
-      opacity: 0; transform: translateX(100%);
-    }
-    
-    /* Loading overlay */
-    .loading-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    }
-    .loading-spinner {
-      width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #dc2626; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .loading-text {
-      font-size: 24px; font-weight: bold; color: #dc2626; text-shadow: 0 2px 4px rgba(0,0,0,0.1); letter-spacing: 2px;
-    }
-    
-    /* Chiroyli data labels */
-    .chartjs-datalabels {
-      font-size: 14px !important;
-      font-weight: bold !important;
-      color: #ffffff !important;
-      background-color: rgba(0, 0, 0, 0.8) !important;
-      border-radius: 6px !important;
-      padding: 6px 8px !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
-      border: 1px solid rgba(255,255,255,0.3) !important;
-    }
+
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+    .marquee-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6)); color: #ffd966; padding: 0.5rem 0; text-align: center; z-index: 999; font-weight: 600; overflow: hidden; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .marquee-footer .marquee-text { display: inline-block; animation: marquee 8s linear infinite; white-space: nowrap; padding-left: 100%; }
+    .marquee-footer .marquee-text:hover { animation-play-state: paused; }
+
+    @keyframes heartbeat { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+    .blinking-band { animation: heartbeat 1s ease-in-out infinite; background-color: #ef4444 !important; border: 2px solid #dc2626; }
+
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px; }
+    .toast { background: rgba(0,0,0,0.9); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.3s ease; }
+    .toast.show { opacity: 1; transform: translateX(0); }
+    .toast.hide { opacity: 0; transform: translateX(100%); }
+
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; }
+    .loading-spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #dc2626; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loading-text { font-size: 24px; font-weight: bold; color: #dc2626; }
   </style>
 </head>
 <body class="antialiased">
-  <!-- Loading overlay -->
   <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner"></div>
     <div class="loading-text">THE BEST TEX</div>
@@ -162,7 +83,6 @@
   {{> navbar}}
 
   <div class="w-full px-4 py-10 mt-10 sm:py-10 pt-40">
-    <!-- 3 ta statistik karta – unchanged -->
     <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
       <div class="stats-card p-4 flex items-center gap-3 shadow-sm">
         <div class="bg-blue-100 p-3 rounded-full"><span class="text-2xl">📊</span></div>
@@ -175,7 +95,7 @@
           <div class="mt-1 space-y-1 text-sm font-medium text-gray-700">
             <p>🔥 Dazmol: <span id="dazmolTotal" class="font-bold text-indigo-600">0</span> dona</p>
             <p>📦 Upakovka: <span id="upakovkaTotal" class="font-bold text-indigo-600">0</span> dona</p>
-            <p>🥇 Eng ko‘p tikkan band: <span id="topBandName" class="font-bold text-emerald-600">—</span> 
+            <p>🥇 Eng ko'p tikkan band: <span id="topBandName" class="font-bold text-emerald-600">—</span>
                (<span id="topBandQty" class="font-bold text-emerald-600">0</span> dona)</p>
           </div>
         </div>
@@ -193,7 +113,6 @@
       </div>
     </div>
 
-    <!-- Grafik 1: Kunlik ishlar -->
     <div id="mainChartCard" class="chart-card p-4 sm:p-6 mb-8 relative">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
         <div class="flex items-center gap-3">
@@ -213,46 +132,39 @@
       <div class="mt-3 text-xs text-gray-400 text-center">🎯 Bandlar uchun kunlik plan: 1000 dona | Upakovka / Dazmol: 10000 dona. Ranglar: 🔴 &lt;50%, 🟡 ≥50%, 🟢 ≥80%</div>
     </div>
 
-    <!-- Toast container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Grafik 2: Oxirgi 12 oylik -->
     <div id="yearlyChartCard" class="ranking-card p-5 shadow-sm mb-6 relative">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">📊 Oxirgi 12 oylik umumiy statistikasi <span class="text-sm font-normal text-gray-500">(barcha mahsulot turlari)</span></h2>
         <button id="fullscreenYearlyBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition"><svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg></button>
       </div>
       <div class="w-full overflow-x-auto"><canvas id="yearlyChart" width="1000" height="300" style="max-height: 350px; width:100%;"></canvas></div>
-      <div class="mt-3 text-xs text-gray-400 text-center">📅 So‘nggi 12 kalendar oy davomida qo‘shilgan jami miqdorlar.</div>
+      <div class="mt-3 text-xs text-gray-400 text-center">📅 So'nggi 12 kalendar oy davomida qo'shilgan jami miqdorlar.</div>
     </div>
 
-    <!-- Bandlar bo‘yicha 30 kunlik -->
     <div class="ranking-card p-5 shadow-sm mb-6">
-      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo‘yicha tikilgan ishlar statistikasi (30 kunlik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
-      <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 30 kunlik tikuv miqdori – grafik ko‘rinish</div></div>
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo'yicha tikilgan ishlar statistikasi (30 kunlik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
+      <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 30 kunlik tikuv miqdori – grafik ko'rinish</div></div>
       <div id="rankingContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
 
-    <!-- Upakovka va Dazmol statistikasi -->
     <div class="ranking-card p-5 shadow-sm mb-6">
       <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📦 Upakovka & Dazmol statistikasi <span class="text-sm font-normal text-gray-500">(barcha vaqt va oxirgi 30 kun)</span></h2>
       <div id="extraStatsContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
 
-    <!-- Oddiy sahifadagi oylik jadval -->
     <div class="ranking-card p-5 shadow-sm mb-6">
-      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📅 Oylik kirim va chiqim (so‘nggi 12 oy)</h2>
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📅 Oylik kirim va chiqim (so'nggi 12 oy)</h2>
       <div id="monthlyTableContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
-    <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌 Grafiklar yuqori o‘ng burchakdagi ⛶ tugmasi bilan to‘liq ekranga kengaytiriladi. Esc tugmasi bilan chiqiladi.</div>
+    <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌 Grafiklar yuqori o'ng burchakdagi ⛶ tugmasi bilan to'liq ekranga kengaytiriladi. Esc tugmasi bilan chiqiladi.</div>
   </div>
 
-  <!-- Modallar (unchanged) -->
-  <div id="incomingModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="incomingModal">&times;</span><h3>📦 Barcha kirim mahsulotlari (model bo‘yicha)</h3><div id="incomingModalList">Yuklanmoqda...</div></div></div>
-  <div id="expenseModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="expenseModal">&times;</span><h3>📉 Bugungi chiqimlar (model bo‘yicha)</h3><div id="expenseModalList">Yuklanmoqda...</div></div></div>
-  <div id="accessoriesModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="accessoriesModal">&times;</span><h3>🔧 Aksessuarlar ro‘yxati</h3><div id="modalAccessoriesList">Yuklanmoqda...</div></div></div>
+  <div id="incomingModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="incomingModal">&times;</span><h3>📦 Barcha kirim mahsulotlari (model bo'yicha)</h3><div id="incomingModalList">Yuklanmoqda...</div></div></div>
+  <div id="expenseModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="expenseModal">&times;</span><h3>📉 Bugungi chiqimlar (model bo'yicha)</h3><div id="expenseModalList">Yuklanmoqda...</div></div></div>
+  <div id="accessoriesModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="accessoriesModal">&times;</span><h3>🔧 Aksessuarlar ro'yxati</h3><div id="modalAccessoriesList">Yuklanmoqda...</div></div></div>
 
-  <!-- Note Modal -->
   <div id="noteModal" class="modal-overlay hidden">
     <div class="modal-content" style="max-width: 500px;">
       <span class="close-modal" data-modal="noteModal">&times;</span>
@@ -267,7 +179,6 @@
   </div>
 
   <script>
-    // ==================== All existing constants and helper functions (unchanged) ====================
     const ALL_TYPES = [
       "1-band","2-band","3-band","4-band","5-band","6-band","7-band","8-band",
       "9-band","10-band","11-band","12-band","13-band","14-band","15-band",
@@ -278,10 +189,7 @@
     async function fetchAPI(url) {
       try {
         const res = await fetch(url);
-        if (!res.ok) {
-          console.warn(`API error at ${url}: HTTP ${res.status}`);
-          return [];
-        }
+        if (!res.ok) { console.warn(`API error at ${url}: HTTP ${res.status}`); return []; }
         const data = await res.json();
         return Array.isArray(data) ? data : [];
       } catch (err) {
@@ -292,8 +200,7 @@
 
     async function fetchAllData() {
       const cacheKey = 'grafikData';
-      const cacheExpiry = 5 * 60 * 1000; // 5 minutes
-      
+      const cacheExpiry = 5 * 60 * 1000;
       try {
         const [products, incoming, expenses, staff, attendance, machines, accessories] = await Promise.all([
           fetchAPI('/api/productmanager'),
@@ -304,45 +211,20 @@
           fetchAPI('/api/machines'),
           fetchAPI('/api/accessories')
         ]);
-        
-        const data = { 
-          products: products || [], 
-          incoming: incoming || [], 
-          expenses: expenses || [], 
-          staff: staff || [], 
-          attendance: attendance || [], 
-          machines: machines || [], 
-          accessories: accessories || [],
-          timestamp: Date.now()
-        };
-        
-        // Save to localStorage
+        const data = { products: products||[], incoming: incoming||[], expenses: expenses||[], staff: staff||[], attendance: attendance||[], machines: machines||[], accessories: accessories||[], timestamp: Date.now() };
         localStorage.setItem(cacheKey, JSON.stringify(data));
-        
         return data;
       } catch (err) {
         console.error('fetchAllData error:', err);
-        
-        // Try to load from localStorage
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           try {
             const parsed = JSON.parse(cached);
-            const age = Date.now() - (parsed.timestamp || 0);
-            if (age < cacheExpiry) {
-              console.log('Using cached data, age:', Math.round(age / 1000), 'seconds');
-              return parsed;
-            } else {
-              console.log('Cached data too old, discarding');
-              localStorage.removeItem(cacheKey);
-            }
-          } catch (parseErr) {
-            console.error('Error parsing cached data:', parseErr);
+            if (Date.now() - (parsed.timestamp||0) < cacheExpiry) return parsed;
             localStorage.removeItem(cacheKey);
-          }
+          } catch(e) { localStorage.removeItem(cacheKey); }
         }
-        
-        return { products: [], incoming: [], expenses: [], staff: [], attendance: [], machines: [], accessories: [] };
+        return { products:[], incoming:[], expenses:[], staff:[], attendance:[], machines:[], accessories:[] };
       }
     }
 
@@ -360,14 +242,12 @@
         try {
           if (!p || !p.createdAt || !p.productType || p.quantity === undefined) return;
           const date = new Date(p.createdAt).toISOString().split('T')[0];
-          const key = `${p._id || p.id}:${date}`;
+          const key = `${p._id||p.id}:${date}`;
           if (date === today && sums.hasOwnProperty(p.productType) && !seen.has(key)) {
             seen.add(key);
             sums[p.productType] += parseInt(p.quantity) || 0;
           }
-        } catch (e) {
-          console.warn('getDailyTotals item error:', e, p);
-        }
+        } catch(e) {}
       });
       return sums;
     }
@@ -386,103 +266,73 @@
       if (!Array.isArray(products)) return Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
       const sums = Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
       const seen = new Set();
-      products.forEach(p => { 
+      products.forEach(p => {
         try {
           if (!p || !p.productType || p.quantity === undefined) return;
-          const key = `${p._id || p.id}`;
-          if (BAND_TYPES.includes(p.productType) && !seen.has(key)) {
-            seen.add(key);
-            sums[p.productType] += parseInt(p.quantity) || 0;
-          }
-        } catch (e) { console.warn('aggregateAllTimeBands error:', e, p); }
+          const key = `${p._id||p.id}`;
+          if (BAND_TYPES.includes(p.productType) && !seen.has(key)) { seen.add(key); sums[p.productType] += parseInt(p.quantity)||0; }
+        } catch(e) {}
       });
       return sums;
     }
 
     function aggregateLast30Days(products) {
       if (!Array.isArray(products)) return Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30*24*60*60*1000);
+      const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000);
       const sums = Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
       const seen = new Set();
       products.forEach(p => {
         try {
           if (!p || !p.productType || !p.createdAt || p.quantity === undefined) return;
-          const key = `${p._id || p.id}`;
+          const key = `${p._id||p.id}`;
           const pDate = new Date(p.createdAt);
           if (isNaN(pDate.getTime())) return;
-          if (BAND_TYPES.includes(p.productType) && pDate >= thirtyDaysAgo && !seen.has(key)) {
-            seen.add(key);
-            sums[p.productType] += parseInt(p.quantity) || 0;
-          }
-        } catch (e) { console.warn('aggregateLast30Days error:', e, p); }
+          if (BAND_TYPES.includes(p.productType) && pDate >= thirtyDaysAgo && !seen.has(key)) { seen.add(key); sums[p.productType] += parseInt(p.quantity)||0; }
+        } catch(e) {}
       });
       return sums;
     }
 
     function getExtraStats(products) {
-      if (!Array.isArray(products)) return { upakovkaAll: 0, upakovka30: 0, dazmolAll: 0, dazmol30: 0 };
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30*24*60*60*1000);
+      if (!Array.isArray(products)) return { upakovkaAll:0, upakovka30:0, dazmolAll:0, dazmol30:0 };
+      const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000);
       let ua=0, u30=0, da=0, d30=0;
       const seen = new Set();
       products.forEach(p => {
         try {
           if (!p || !p.productType || p.quantity === undefined) return;
-          const key = `${p._id || p.id}`;
+          const key = `${p._id||p.id}`;
           if (!seen.has(key)) {
             seen.add(key);
-            const qty = parseInt(p.quantity) || 0;
-            if (p.productType === 'Upakovka') { 
-              ua += qty; 
-              if (p.createdAt) {
-                const pDate = new Date(p.createdAt);
-                if (!isNaN(pDate.getTime()) && pDate >= thirtyDaysAgo) u30 += qty;
-              }
-            }
-            else if (p.productType === 'Dazmol') { 
-              da += qty; 
-              if (p.createdAt) {
-                const pDate = new Date(p.createdAt);
-                if (!isNaN(pDate.getTime()) && pDate >= thirtyDaysAgo) d30 += qty;
-              }
-            }
+            const qty = parseInt(p.quantity)||0;
+            const pDate = p.createdAt ? new Date(p.createdAt) : null;
+            if (p.productType === 'Upakovka') { ua += qty; if (pDate && !isNaN(pDate.getTime()) && pDate >= thirtyDaysAgo) u30 += qty; }
+            else if (p.productType === 'Dazmol') { da += qty; if (pDate && !isNaN(pDate.getTime()) && pDate >= thirtyDaysAgo) d30 += qty; }
           }
-        } catch (e) { console.warn('getExtraStats error:', e, p); }
+        } catch(e) {}
       });
-      return { upakovkaAll: ua, upakovka30: u30, dazmolAll: da, dazmol30: d30 };
+      return { upakovkaAll:ua, upakovka30:u30, dazmolAll:da, dazmol30:d30 };
     }
 
     function getYearlyTotals(products) {
-      if (!Array.isArray(products)) {
-        const now = new Date();
-        const months = [];
-        for (let i = 11; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
-        }
-        return { months, totals: Object.fromEntries(months.map(m => [m, 0])) };
-      }
       const now = new Date();
       const months = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      for (let i=11; i>=0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
         months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
       }
       const totals = Object.fromEntries(months.map(m => [m, 0]));
+      if (!Array.isArray(products)) return { months, totals };
       const seen = new Set();
       products.forEach(p => {
         try {
           if (!p || !p.createdAt || p.quantity === undefined) return;
-          const key = `${p._id || p.id}`;
+          const key = `${p._id||p.id}`;
           const pDate = new Date(p.createdAt);
           if (isNaN(pDate.getTime())) return;
           const mk = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
-          if (totals.hasOwnProperty(mk) && !seen.has(key)) {
-            seen.add(key);
-            totals[mk] += parseInt(p.quantity) || 0;
-          }
-        } catch (e) { console.warn('getYearlyTotals error:', e, p); }
+          if (totals.hasOwnProperty(mk) && !seen.has(key)) { seen.add(key); totals[mk] += parseInt(p.quantity)||0; }
+        } catch(e) {}
       });
       return { months, totals };
     }
@@ -490,50 +340,22 @@
     function computeWarehouseStats(incoming, expenses) {
       if (!Array.isArray(incoming)) incoming = [];
       if (!Array.isArray(expenses)) expenses = [];
-      
-      const incomingIds = new Set();
-      const totalIn = incoming.reduce((s, p) => {
-        try {
-          if (!p || p.quantity === undefined) return s;
-          const key = `${p._id || p.id}`;
-          if (!incomingIds.has(key)) {
-            incomingIds.add(key);
-            return s + (parseInt(p.quantity) || 0);
-          }
-          return s;
-        } catch (e) { console.warn('computeWarehouseStats incoming error:', e, p); return s; }
+      const inSeen = new Set();
+      const totalIn = incoming.reduce((s,p) => {
+        const key = `${p._id||p.id}`;
+        if (!inSeen.has(key)) { inSeen.add(key); return s + (parseInt(p.quantity)||0); }
+        return s;
       }, 0);
-      
-      const expenseIds = new Set();
-      const totalOut = expenses.reduce((s, e) => {
-        try {
-          if (!e || e.quantity === undefined) return s;
-          const key = `${e._id || e.id}`;
-          if (!expenseIds.has(key)) {
-            expenseIds.add(key);
-            return s + (parseInt(e.quantity) || 0);
-          }
-          return s;
-        } catch (ex) { console.warn('computeWarehouseStats expenses error:', ex, e); return s; }
+      const outSeen = new Set();
+      const totalOut = expenses.reduce((s,e) => {
+        const key = `${e._id||e.id}`;
+        if (!outSeen.has(key)) { outSeen.add(key); return s + (parseInt(e.quantity)||0); }
+        return s;
       }, 0);
-      
       const today = getTodayKey();
-      const todayExpenseIds = new Set();
-      const todayExpense = expenses.filter(e => {
-        try {
-          return e && e.date && new Date(e.date).toISOString().split('T')[0] === today;
-        } catch (ex) { return false; }
-      }).reduce((s, e) => {
-        try {
-          if (!e || e.quantity === undefined) return s;
-          const key = `${e._id || e.id}`;
-          if (!todayExpenseIds.has(key)) {
-            todayExpenseIds.add(key);
-            return s + (parseInt(e.quantity) || 0);
-          }
-          return s;
-        } catch (ex) { console.warn('computeWarehouseStats todayExpense error:', ex, e); return s; }
-      }, 0);
+      const todaySeen = new Set();
+      const todayExpense = expenses.filter(e => { try { return e && e.date && new Date(e.date).toISOString().split('T')[0] === today; } catch(ex) { return false; } })
+        .reduce((s,e) => { const key = `${e._id||e.id}`; if (!todaySeen.has(key)) { todaySeen.add(key); return s+(parseInt(e.quantity)||0); } return s; }, 0);
       return { available: totalIn - totalOut, todayExpense };
     }
 
@@ -541,315 +363,258 @@
       if (!Array.isArray(staff)) staff = [];
       if (!Array.isArray(attendance)) attendance = [];
       const today = getTodayKey();
-      const todayAttendance = attendance.filter(a => a && a.date === today);
-      const present = todayAttendance.filter(a => a && a.checkIn).length;
-      const late = todayAttendance.filter(a => a && a.checkIn && (a.lateMinutes > 0)).length;
-      const absent = staff.length - present;
-      return { present, absent, late, totalStaff: staff.length };
+      const todayAtt = attendance.filter(a => a && a.date === today);
+      const present = todayAtt.filter(a => a && a.checkIn).length;
+      const late = todayAtt.filter(a => a && a.checkIn && a.lateMinutes > 0).length;
+      return { present, absent: staff.length - present, late, totalStaff: staff.length };
     }
 
     function getMonthlyIncomingExpense(incoming, expenses) {
       if (!Array.isArray(incoming)) incoming = [];
       if (!Array.isArray(expenses)) expenses = [];
-      
       const now = new Date();
       const months = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      for (let i=11; i>=0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
         months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
       }
-      const incomingTotal = Object.fromEntries(months.map(m => [m, 0]));
-      const expenseTotal = Object.fromEntries(months.map(m => [m, 0]));
-      
-      const incomingSeen = new Set();
+      const incomingTotal = Object.fromEntries(months.map(m => [m,0]));
+      const expenseTotal = Object.fromEntries(months.map(m => [m,0]));
+      const inSeen = new Set();
       incoming.forEach(p => {
         try {
           if (!p || !p.date || p.quantity === undefined) return;
-          const key = `${p._id || p.id}`;
+          const key = `${p._id||p.id}`;
           const pDate = new Date(p.date);
           if (isNaN(pDate.getTime())) return;
           const mk = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
-          if (incomingTotal.hasOwnProperty(mk) && !incomingSeen.has(key)) {
-            incomingSeen.add(key);
-            incomingTotal[mk] += (parseInt(p.quantity) || 0);
-          }
-        } catch (e) { console.warn('getMonthlyIncomingExpense incoming error:', e, p); }
+          if (incomingTotal.hasOwnProperty(mk) && !inSeen.has(key)) { inSeen.add(key); incomingTotal[mk] += parseInt(p.quantity)||0; }
+        } catch(e) {}
       });
-      
-      const expenseSeen = new Set();
+      const exSeen = new Set();
       expenses.forEach(e => {
         try {
           if (!e || !e.date || e.quantity === undefined) return;
-          const key = `${e._id || e.id}`;
+          const key = `${e._id||e.id}`;
           const eDate = new Date(e.date);
           if (isNaN(eDate.getTime())) return;
           const mk = `${eDate.getFullYear()}-${String(eDate.getMonth()+1).padStart(2,'0')}`;
-          if (expenseTotal.hasOwnProperty(mk) && !expenseSeen.has(key)) {
-            expenseSeen.add(key);
-            expenseTotal[mk] += (parseInt(e.quantity) || 0);
-          }
-        } catch (ex) { console.warn('getMonthlyIncomingExpense expense error:', ex, e); }
+          if (expenseTotal.hasOwnProperty(mk) && !exSeen.has(key)) { exSeen.add(key); expenseTotal[mk] += parseInt(e.quantity)||0; }
+        } catch(ex) {}
       });
       return { months, incomingTotal, expenseTotal };
     }
 
-    // Toast function
-    function showToast(message, duration = 30000) {
-      const toastContainer = document.getElementById('toastContainer');
-      if (!toastContainer) return;
+    function showToast(message, duration=30000) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
       const toast = document.createElement('div');
       toast.className = 'toast';
       toast.innerText = message;
-      toastContainer.appendChild(toast);
+      container.appendChild(toast);
       setTimeout(() => toast.classList.add('show'), 100);
-      setTimeout(() => {
-        toast.classList.remove('show');
-        toast.classList.add('hide');
-        setTimeout(() => toast.remove(), 300);
-      }, duration);
+      setTimeout(() => { toast.classList.remove('show'); toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, duration);
     }
 
-    // -------------------- Grafik chizish funksiyalari (unchanged) --------------------
+    // ✅ FIX 2: Chart instances — har doim destroy+recreate, canvas check yo'q
     let mainChart = null, yearlyChart = null, bandBarChart = null;
     let shownToasts = new Set();
+
+    // ✅ FIX 2: Yagona config yaratuvchi helper — duplicate code yo'q
+    function buildMainChartConfig(labels, data, dailyTotals) {
+      const backgroundColors = labels.map(l => getColorAndEmoji(l, dailyTotals[l]||0).color);
+      const borderColors = backgroundColors.map(c => c.replace('0.85','1'));
+      return {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Kunlik tikuv (dona)',
+            data,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 0.5,
+            borderRadius: 3,
+            barPercentage: 0.9,
+            categoryPercentage: 0.95,
+            barThickness: 30
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  let val = ctx.raw;
+                  let type = ctx.label;
+                  if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
+                  let plan = type.includes('band') ? 1000 : 10000;
+                  return `${val} dona (${(val/plan*100).toFixed(0)}% plan)`;
+                }
+              }
+            },
+            legend: { position: 'top' },
+            datalabels: {
+              anchor: 'end', align: 'top', offset: 12,
+              color: '#fff', font: { weight:'bold', size:12 },
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              borderRadius: 4, padding: 4,
+              formatter: (value, ctx) => {
+                let val = value;
+                const type = ctx.chart.data.labels[ctx.dataIndex];
+                if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
+                return val === 0 ? '' : val;
+              }
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, title: { display:true, text:'Kunlik tikuv (dona)' }, grid: { color:'#e2e8f0' }, ticks: { font: { size:10 } } },
+            x: { title: { display:true, text:'Mahsulot turi' }, ticks: { maxRotation:0, minRotation:0, autoSkip:false, font: { size:10 } }, grid: { display:false } }
+          },
+          animation: { duration:1200, easing:'easeOutElastic' }
+        },
+        plugins: [ChartDataLabels]
+      };
+    }
 
     function renderMainChart(products) {
       const dailyTotals = getDailyTotals(products);
       const labels = BAND_TYPES.slice(0,17).concat(['Upakovka','Dazmol']);
       const data = labels.map(t => {
         const val = dailyTotals[t] || 0;
-        if (t === 'Upakovka' || t === 'Dazmol') return val / 3; // 1/3
-        return val;
+        return (t === 'Upakovka' || t === 'Dazmol') ? val / 3 : val;
       });
+
       const ctx = document.getElementById('quantityChart')?.getContext('2d');
       const noDataDiv = document.getElementById('noDataMessage');
-      const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type] || 0), 0);
-      document.getElementById('dailyTotalBadge').innerText = `Bugungi jami: ${dailyTotal} dona`;
+      const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type]||0), 0);
+      const badge = document.getElementById('dailyTotalBadge');
+      if (badge) badge.innerText = `Bugungi jami: ${dailyTotal} dona`;
       if (!ctx) return;
+
+      // ✅ FIX 2: Har doim destroy qilib qayta yaratish — canvas check muammosi yo'q
+      if (mainChart) { mainChart.destroy(); mainChart = null; }
+
       if (dailyTotal === 0) {
-        if (mainChart) mainChart.destroy();
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         if (noDataDiv) noDataDiv.classList.remove('hidden');
         return;
       }
       if (noDataDiv) noDataDiv.classList.add('hidden');
 
-      if (mainChart) {
-        // Check if chart is still valid (not destroyed)
-        if (mainChart.canvas && mainChart.ctx) {
-          mainChart.data.datasets[0].data = data;
-          const backgroundColors = labels.map(l => getColorAndEmoji(l, dailyTotals[l] || 0).color);
-          const borderColors = backgroundColors.map(c => c.replace('0.85','1'));
-          mainChart.data.datasets[0].backgroundColor = backgroundColors;
-          mainChart.data.datasets[0].borderColor = borderColors;
-          mainChart.update();
-        } else {
-          // Chart was destroyed, create new one
-          mainChart = null;
-          const backgroundColors = labels.map(l => getColorAndEmoji(l, dailyTotals[l] || 0).color);
-          const borderColors = backgroundColors.map(c => c.replace('0.85','1'));
-          mainChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets: [{ label: 'Kunlik tikuv (dona)', data, backgroundColor: backgroundColors, borderColor: borderColors, borderWidth: 0.5, borderRadius: 3, barPercentage: 0.9, categoryPercentage: 0.95, barThickness: 30 }] },
-            options: {
-              responsive: true, maintainAspectRatio: true,
-              plugins: {
-                tooltip: { callbacks: { label: ctx => { 
-                  let val = ctx.raw; 
-                  let type = ctx.label; 
-                  if (type === 'Upakovka' || type === 'Dazmol') val *= 3; // asl qiymat
-                  let plan = type.includes('band') ? 1000 : 10000; 
-                  let pct = (val/plan*100).toFixed(0); 
-                  return `${val} dona (${pct}% plan)`; 
-                } } },
-                legend: { position: 'top' },
-                datalabels: { 
-                  anchor: 'end', 
-                  align: 'top', 
-                  offset: 12, 
-                  color: '#fff', 
-                  font: { weight:'bold', size:12 },
-                  formatter: (value, ctx) => {
-                    let val = value;
-                    let type = ctx.chart.data.labels[ctx.dataIndex];
-                    if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
-                    return val > 0 ? val : '';
-                  }
-                }
-              },
-              scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.1)' }, ticks: { font: { size: 11 } } }
-              }
-            },
-            plugins: [ChartDataLabels]
-          });
-        }
-      } else {
-        const backgroundColors = labels.map(l => getColorAndEmoji(l, dailyTotals[l] || 0).color);
-        const borderColors = backgroundColors.map(c => c.replace('0.85','1'));
-        mainChart = new Chart(ctx, {
-          type: 'bar',
-          data: { labels, datasets: [{ label: 'Kunlik tikuv (dona)', data, backgroundColor: backgroundColors, borderColor: borderColors, borderWidth: 0.5, borderRadius: 3, barPercentage: 0.9, categoryPercentage: 0.95, barThickness: 30 }] },
-          options: {
-            responsive: true, maintainAspectRatio: true,
-            plugins: {
-              tooltip: { callbacks: { label: ctx => { 
-                let val = ctx.raw; 
-                let type = ctx.label; 
-                if (type === 'Upakovka' || type === 'Dazmol') val *= 3; // asl qiymat
-                let plan = type.includes('band') ? 1000 : 10000; 
-                let pct = (val/plan*100).toFixed(0); 
-                return `${val} dona (${pct}% plan)`; 
-              } } },
-              legend: { position: 'top' },
-              datalabels: { 
-                anchor: 'end', 
-                align: 'top', 
-                offset: 12, 
-                color: '#fff', 
-                font: { weight:'bold', size:12 },
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                borderRadius: 4,
-                padding: 4,
-                formatter: (value, ctx) => { 
-                  let val = value;
-                  let type = ctx.chart.data.labels[ctx.dataIndex];
-                  if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
-                  return val === 0 ? '' : val; 
-                }
-              }
-            },
-            scales: { y: { beginAtZero: true, title: { display: true, text: 'Kunlik tikuv (dona)' }, grid: { color: '#e2e8f0' }, ticks: { font: { size: 10 } } }, x: { title: { display: true, text: 'Mahsulot turi' }, ticks: { maxRotation: 0, minRotation: 0, autoSkip: false, font: { size: 10 } }, grid: { display: false } } },
-            animation: { duration: 1200, easing: 'easeOutElastic' }
-          },
-          plugins: [ChartDataLabels]
-        });
-      }
+      mainChart = new Chart(ctx, buildMainChartConfig(labels, data, dailyTotals));
 
-      // Handle blinking bands and toasts
-      const now = new Date();
-      const currentHour = now.getHours();
-      const shouldBlink = currentHour >= 8; // 8:00 dan keyin har bir soatda miltillash
-      const zeroBands = BAND_TYPES.slice(0, 15).filter(b => (dailyTotals[b] || 0) === 0 && shouldBlink);
+      // Blinking bands
+      const currentHour = new Date().getHours();
+      const shouldBlink = currentHour >= 8;
+      const zeroBands = BAND_TYPES.slice(0, 15).filter(b => (dailyTotals[b]||0) === 0 && shouldBlink);
       const blinkingDiv = document.getElementById('blinkingBands');
       if (blinkingDiv) {
-        blinkingDiv.innerHTML = zeroBands.length ? zeroBands.map(b => `<span class="inline-block bg-red-500 text-white px-3 py-1 rounded-full mx-1 font-semibold blinking-band">${b}</span>`).join('') : '';
+        blinkingDiv.innerHTML = zeroBands.length
+          ? zeroBands.map(b => `<span class="inline-block bg-red-500 text-white px-3 py-1 rounded-full mx-1 font-semibold blinking-band">${b}</span>`).join('')
+          : '';
       }
-      // Show toasts for zero bands
-      // zeroBands.forEach(band => {
-      //   if (!shownToasts.has(band)) {
-      //     showToast(`${band} ga soatlik qiymat kiritilmagan!`, 30000);
-      //     shownToasts.add(band);
-      //   }
-      // });
-      // Remove from shownToasts if now has value
-      shownToasts.forEach(band => {
-        if (!zeroBands.includes(band)) {
-          shownToasts.delete(band);
-        }
-      });
+      shownToasts.forEach(band => { if (!zeroBands.includes(band)) shownToasts.delete(band); });
+    }
+
+    // ✅ FIX 2: Yearly chart ham xuddi shunday — destroy+recreate
+    function buildYearlyChartConfig(monthLabels, data) {
+      return {
+        type: 'bar',
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: 'Umumiy miqdor (dona)',
+            data,
+            backgroundColor: 'rgba(59,130,246,0.7)',
+            borderColor: 'rgb(59,130,246)',
+            borderWidth: 1,
+            borderRadius: 6,
+            barPercentage: 0.8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: { callbacks: { label: ctx => `${ctx.raw} dona` } },
+            legend: { position: 'top' },
+            datalabels: {
+              anchor:'end', align:'top', offset:4,
+              backgroundColor:'rgba(0,0,0,0.7)',
+              borderRadius:12, padding:{ top:2, bottom:2, left:6, right:6 },
+              color:'white', font:{ weight:'bold', size:10 },
+              formatter: value => value > 0 ? value : ''
+            }
+          },
+          scales: {
+            y: { beginAtZero:true, title:{ display:true, text:'Miqdor (dona)' } },
+            x: { ticks:{ maxRotation:45, minRotation:45, font:{ size:10 } }, grid:{ display:false } }
+          },
+          animation: { duration:1000 }
+        },
+        plugins: [ChartDataLabels]
+      };
     }
 
     function renderYearlyChart(products) {
       const { months, totals } = getYearlyTotals(products);
       const ctx = document.getElementById('yearlyChart')?.getContext('2d');
       if (!ctx) return;
-      if (products.length === 0) {
-        if (yearlyChart) yearlyChart.destroy();
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+
+      if (yearlyChart) { yearlyChart.destroy(); yearlyChart = null; }
+
+      if (!products.length) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         document.getElementById('yearlyChart').style.display = 'none';
-        yearlyChart = null;
         return;
       }
       document.getElementById('yearlyChart').style.display = 'block';
-      const monthLabels = months.map(m => { const [y,mo] = m.split('-'); return new Date(y, mo-1).toLocaleString('uz', { month:'short', year:'numeric' }); });
-      const data = months.map(m => totals[m] || 0);
-
-      if (yearlyChart) {
-        // Check if chart is still valid (not destroyed)
-        if (yearlyChart.canvas && yearlyChart.ctx) {
-          yearlyChart.data.labels = monthLabels;
-          yearlyChart.data.datasets[0].data = data;
-          yearlyChart.update();
-        } else {
-          // Chart was destroyed, create new one
-          yearlyChart = null;
-          yearlyChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: monthLabels, datasets: [{ label: 'Umumiy miqdor (dona)', data, backgroundColor: 'rgba(59,130,246,0.7)', borderColor: 'rgb(59,130,246)', borderWidth: 1, borderRadius: 6, barPercentage: 0.8 }] },
-            options: {
-              responsive: true, maintainAspectRatio: true,
-              plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw} dona` } }, legend: { position: 'top' }, datalabels: { anchor: 'end', align: 'top', offset: 4, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 12, padding: { top:2, bottom:2, left:6, right:6 }, color: 'white', font: { weight:'bold', size:10 }, formatter: value => value > 0 ? value : '' } },
-              scales: { y: { beginAtZero: true, title: { display: true, text: 'Miqdor (dona)' } }, x: { ticks: { maxRotation: 45, minRotation: 45, font: { size:10 } }, grid: { display: false } } },
-              animation: { duration: 1000 }
-            },
-            plugins: [ChartDataLabels]
-          });
-        }
-      } else {
-        yearlyChart = new Chart(ctx, {
-          type: 'bar',
-          data: { labels: monthLabels, datasets: [{ label: 'Umumiy miqdor (dona)', data, backgroundColor: 'rgba(59,130,246,0.7)', borderColor: 'rgb(59,130,246)', borderWidth: 1, borderRadius: 6, barPercentage: 0.8 }] },
-          options: {
-            responsive: true, maintainAspectRatio: true,
-            plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw} dona` } }, legend: { position: 'top' }, datalabels: { anchor: 'end', align: 'top', offset: 4, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 12, padding: { top:2, bottom:2, left:6, right:6 }, color: 'white', font: { weight:'bold', size:10 }, formatter: value => value > 0 ? value : '' } },
-            scales: { y: { beginAtZero: true, title: { display: true, text: 'Miqdor (dona)' } }, x: { ticks: { maxRotation: 45, minRotation: 45, font: { size:10 } }, grid: { display: false } } },
-            animation: { duration: 1000 }
-          },
-          plugins: [ChartDataLabels]
-        });
-      }
+      const monthLabels = months.map(m => {
+        const [y,mo] = m.split('-');
+        return new Date(y, mo-1).toLocaleString('uz', { month:'short', year:'numeric' });
+      });
+      yearlyChart = new Chart(ctx, buildYearlyChartConfig(monthLabels, months.map(m => totals[m]||0)));
     }
 
     function renderBandBarChart(last30Sums) {
       const ctx = document.getElementById('bandBarChart')?.getContext('2d');
       if (!ctx) return;
       const labels = BAND_TYPES;
-      const data = labels.map(b => last30Sums[b] || 0);
-      const total = data.reduce((a,b)=>a+b,0);
-      if (total === 0) {
-        if (bandBarChart) bandBarChart.destroy();
-        ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-        bandBarChart = null;
-        return;
-      }
-      if (bandBarChart) {
-        bandBarChart.data.labels = labels;
-        bandBarChart.data.datasets[0].data = data;
-        bandBarChart.update();
-      } else {
-        bandBarChart = new Chart(ctx, {
-          type: 'bar',
-          data: { labels, datasets: [{ label: '30 kunlik tikuv (dona)', data, backgroundColor: 'rgba(59,130,246,0.7)', borderColor: 'rgb(59,130,246)', borderWidth: 1, borderRadius: 8, barPercentage: 0.8, categoryPercentage: 0.9 }] },
-          options: {
-            responsive: true, maintainAspectRatio: true,
-            plugins: { tooltip: { callbacks: { label: ctx => `${ctx.raw} dona` } }, legend: { position: 'top' }, datalabels: { anchor: 'end', align: 'top', offset: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, padding: { top:2, bottom:2, left:6, right:6 }, color: 'white', font: { weight:'bold', size:11 }, formatter: value => value > 0 ? value : '' } },
-            scales: { y: { beginAtZero: true, title: { display: true, text: 'Miqdor (dona)' } }, x: { ticks: { maxRotation: 45, minRotation: 45, font: { size:10 } }, grid: { display: false } } },
-            animation: { duration: 1000 }
-          },
-          plugins: [ChartDataLabels]
-        });
-      }
+      const data = labels.map(b => last30Sums[b]||0);
+      if (bandBarChart) { bandBarChart.destroy(); bandBarChart = null; }
+      if (data.reduce((a,b)=>a+b,0) === 0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
+      bandBarChart = new Chart(ctx, {
+        type:'bar',
+        data: { labels, datasets:[{ label:'30 kunlik tikuv (dona)', data, backgroundColor:'rgba(59,130,246,0.7)', borderColor:'rgb(59,130,246)', borderWidth:1, borderRadius:8, barPercentage:0.8, categoryPercentage:0.9 }] },
+        options: {
+          responsive:true, maintainAspectRatio:true,
+          plugins: { tooltip:{ callbacks:{ label:ctx=>`${ctx.raw} dona` } }, legend:{position:'top'}, datalabels:{ anchor:'end', align:'top', offset:6, backgroundColor:'rgba(0,0,0,0.6)', borderRadius:12, padding:{top:2,bottom:2,left:6,right:6}, color:'white', font:{weight:'bold',size:11}, formatter:value=>value>0?value:'' } },
+          scales: { y:{beginAtZero:true,title:{display:true,text:'Miqdor (dona)'}}, x:{ticks:{maxRotation:45,minRotation:45,font:{size:10}},grid:{display:false}} },
+          animation:{duration:1000}
+        },
+        plugins:[ChartDataLabels]
+      });
     }
 
     function renderRanking(last30Sums) {
       const container = document.getElementById('rankingContainer');
       if (!container) return;
-      const entries = BAND_TYPES.map(t => [t, last30Sums[t] || 0]);
-      entries.sort((a,b) => b[1] - a[1]);
-      const totalLast = entries.reduce((s, [,v]) => s+v, 0);
-      if (totalLast === 0) { container.innerHTML = '<div class="text-center py-6 text-gray-400">📭 Oxirgi 30 kun ichida bandlar bo‘yicha hech qanday maʼlumot kiritilmagan.</div>'; return; }
-      let html = '<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">30 kunlik (dona)</th> </thead><tbody>';
-      entries.forEach(([type, qty], idx) => { const rank = idx+1; html += `<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm font-medium text-gray-500">${rank} <td class="py-3 px-3 text-sm font-semibold text-gray-800">${type}<td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${qty} `; });
-      html += `</tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"> <td colspan="2" class="py-3 px-3 text-sm font-bold text-gray-700">Jami (bandlar)<td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${totalLast} </tfoot> <div class="mt-3 text-xs text-gray-400 text-center">📊 30 kunlik tikuv miqdori bo‘yicha tartiblangan.</div>`;
-      container.innerHTML = html;
+      const entries = BAND_TYPES.map(t => [t, last30Sums[t]||0]).sort((a,b)=>b[1]-a[1]);
+      const totalLast = entries.reduce((s,[,v])=>s+v,0);
+      if (!totalLast) { container.innerHTML='<div class="text-center py-6 text-gray-400">📭 30 kun ichida maʼlumot yo\'q.</div>'; return; }
+      let html='<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">30 kunlik</th></tr></thead><tbody>';
+      entries.forEach(([type,qty],idx)=>{ html+=`<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm text-gray-500">${idx+1}</td><td class="py-3 px-3 text-sm font-semibold">${type}</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${qty}</td></tr>`; });
+      html+=`</tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td colspan="2" class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${totalLast}</td></tr></tfoot></table>`;
+      container.innerHTML=html;
     }
 
-    function renderExtraStats(ua, u30, da, d30) {
-      const container = document.getElementById('extraStatsContainer');
-      if (!container) return;
-      container.innerHTML = `<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Mahsulot turi</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">Jami tikuv (dona)</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">30 kunlik (dona)</th> </thead><tbody><tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm font-semibold text-gray-800">📦 Upakovka <td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${ua} <td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${u30} <tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm font-semibold text-gray-800">🔥 Dazmol <td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${da} <td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${d30} </tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"> <td class="py-3 px-3 text-sm font-bold text-gray-700">Jami <td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${ua+da} <td class="py-3 px-3 text-sm font-bold text-emerald-700 text-right">${u30+d30} </tfoot> <div class="mt-3 text-xs text-gray-400 text-center">📊 Upakovka va Dazmol uchun alohida statistika.</div>`;
+    function renderExtraStats(ua,u30,da,d30) {
+      const c=document.getElementById('extraStatsContainer');
+      if (!c) return;
+      c.innerHTML=`<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">Mahsulot turi</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Jami</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">30 kunlik</th></tr></thead><tbody><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">📦 Upakovka</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${ua}</td><td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${u30}</td></tr><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">🔥 Dazmol</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${da}</td><td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${d30}</td></tr></tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${ua+da}</td><td class="py-3 px-3 text-sm font-bold text-emerald-700 text-right">${u30+d30}</td></tr></tfoot></table>`;
     }
 
     function renderMonthlyTable(incoming, expenses) {
@@ -858,460 +623,274 @@
       try {
         const { months, incomingTotal, expenseTotal } = getMonthlyIncomingExpense(incoming, expenses);
         let hasData = false;
-        let tableHtml = '<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Oy</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">Kirim (dona)</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">Chiqim (dona)</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 uppercase text-right">Qoldiq</th> </thead><tbody>';
+        let html = '<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">Oy</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Kirim</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Chiqim</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Qoldiq</th></tr></thead><tbody>';
         for (const m of months) {
-          const inQty = incomingTotal[m] || 0;
-          const outQty = expenseTotal[m] || 0;
-          const balance = inQty - outQty;
-          const balanceClass = balance < 0 ? 'negative-value' : '';
-          const monthName = new Date(m.split('-')[0], parseInt(m.split('-')[1])-1).toLocaleString('uz', { month:'short', year:'numeric' });
-          tableHtml += `<tr class="border-b border-gray-100"><td class="py-2 px-3 text-sm">${monthName}<td class="py-2 px-3 text-sm text-right">${inQty}<td class="py-2 px-3 text-sm text-right">${outQty}<td class="py-2 px-3 text-sm text-right ${balanceClass}">${balance}`;
-          if (inQty > 0 || outQty > 0) hasData = true;
+          const inQ=incomingTotal[m]||0, outQ=expenseTotal[m]||0, bal=inQ-outQ;
+          const mn = new Date(m.split('-')[0], parseInt(m.split('-')[1])-1).toLocaleString('uz',{month:'short',year:'numeric'});
+          html += `<tr class="border-b border-gray-100"><td class="py-2 px-3 text-sm">${mn}</td><td class="py-2 px-3 text-sm text-right">${inQ}</td><td class="py-2 px-3 text-sm text-right">${outQ}</td><td class="py-2 px-3 text-sm text-right ${bal<0?'negative-value':''}">${bal}</td></tr>`;
+          if (inQ>0||outQ>0) hasData=true;
         }
-        tableHtml += '</tbody>';
-        if (!hasData) container.innerHTML = '<div class="text-center py-6 text-gray-400">📭 So‘nggi 12 oy ichida kirim yoki chiqim mavjud emas.</div>';
-        else container.innerHTML = tableHtml;
-      } catch (err) { console.error('renderMonthlyTable error:', err); container.innerHTML = '<div class="text-center py-6 text-red-500">Xatolik yuz berdi.</div>'; }
+        html += '</tbody></table>';
+        container.innerHTML = hasData ? html : '<div class="text-center py-6 text-gray-400">📭 12 oy ichida maʼlumot yo\'q.</div>';
+      } catch(err) { container.innerHTML='<div class="text-center py-6 text-red-500">Xatolik yuz berdi.</div>'; }
     }
 
-    // -------------------- Modallar --------------------
+    // Modallar
     async function showIncomingModal() {
-      const modal = document.getElementById('incomingModal');
-      const container = document.getElementById('incomingModalList');
-      modal.classList.remove('hidden');
-      container.innerHTML = 'Yuklanmoqda...';
+      const modal=document.getElementById('incomingModal'), c=document.getElementById('incomingModalList');
+      modal.classList.remove('hidden'); c.innerHTML='Yuklanmoqda...';
       try {
-        const incoming = await fetchAPI('/api/incoming');
-        if (!incoming.length) { container.innerHTML = '<div class="text-center text-gray-400 py-4">Hech qanday kirim mavjud emas</div>'; return; }
-        const groups = {};
-        incoming.forEach(item => { const model = item.modelName || 'Nomaʼlum model'; if (!groups[model]) groups[model] = []; groups[model].push(item); });
-        let html = '';
-        for (const [modelName, items] of Object.entries(groups)) {
-          html += `<div class="mb-6"><h4 class="font-bold text-lg capitalize mb-2">📦 ${escapeHtml(modelName)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2 text-left">Variant</th><th class="p-2 text-left">Zakaz #</th><th class="p-2 text-right">Miqdor</th><th class="p-2 text-left">Sana</th><th class="p-2 text-left">Rasm</th> </thead><tbody>`;
-          items.forEach(item => {
-            const imgHtml = item.imageData ? `<img src="${item.imageData}" class="thumb-small">` : '—';
-            html += ` <td class="p-2">${escapeHtml(item.variant || '—')} <td class="p-2">${escapeHtml(item.orderNumber || '—')} <td class="p-2 text-right">${item.quantity} <td class="p-2">${new Date(item.date).toLocaleDateString()} <td class="p-2">${imgHtml} `;
-          });
-          html += `</tbody> </div>`;
-        }
-        container.innerHTML = html;
-      } catch (err) { console.error(err); container.innerHTML = '<div class="text-red-500 text-center">Xatolik yuz berdi</div>'; }
+        const items=await fetchAPI('/api/incoming');
+        if (!items.length){c.innerHTML='<div class="text-center text-gray-400 py-4">Kirim mavjud emas</div>';return;}
+        const groups={};
+        items.forEach(i=>{const m=i.modelName||'Noma\'lum';if(!groups[m])groups[m]=[];groups[m].push(i);});
+        let html='';
+        for(const[mn,its]of Object.entries(groups)){html+=`<div class="mb-6"><h4 class="font-bold text-lg mb-2">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2 text-left">Variant</th><th class="p-2 text-left">Zakaz</th><th class="p-2 text-right">Miqdor</th><th class="p-2 text-left">Sana</th><th class="p-2 text-left">Rasm</th></tr></thead><tbody>`;its.forEach(i=>{html+=`<tr><td class="p-2">${escapeHtml(i.variant||'—')}</td><td class="p-2">${escapeHtml(i.orderNumber||'—')}</td><td class="p-2 text-right">${i.quantity}</td><td class="p-2">${new Date(i.date).toLocaleDateString()}</td><td class="p-2">${i.imageData?`<img src="${i.imageData}" class="thumb-small">`:'—'}</td></tr>`;});html+=`</tbody></table></div>`;}
+        c.innerHTML=html;
+      } catch(e){c.innerHTML='<div class="text-red-500 text-center">Xatolik</div>';}
     }
 
     async function showExpenseModal() {
-      const modal = document.getElementById('expenseModal');
-      const container = document.getElementById('expenseModalList');
-      modal.classList.remove('hidden');
-      container.innerHTML = 'Yuklanmoqda...';
+      const modal=document.getElementById('expenseModal'), c=document.getElementById('expenseModalList');
+      modal.classList.remove('hidden'); c.innerHTML='Yuklanmoqda...';
       try {
-        const allExpenses = await fetchAPI('/api/expenses');
-        const today = getTodayKey();
-        const todayExpenses = allExpenses.filter(e => new Date(e.date).toISOString().split('T')[0] === today);
-        if (!todayExpenses.length) { container.innerHTML = '<div class="text-center text-gray-400 py-4">Bugungi chiqim mavjud emas</div>'; return; }
-        const groups = {};
-        todayExpenses.forEach(item => { const model = item.modelName || 'Nomaʼlum model'; if (!groups[model]) groups[model] = []; groups[model].push(item); });
-        let html = '';
-        for (const [modelName, items] of Object.entries(groups)) {
-          html += `<div class="mb-6"><h4 class="font-bold text-lg capitalize mb-2">📦 ${escapeHtml(modelName)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2 text-left">Variant</th><th class="p-2 text-left">Zakaz #</th><th class="p-2 text-left">Band</th><th class="p-2 text-right">Miqdor</th><th class="p-2 text-left">Sana</th> </thead><tbody>`;
-          items.forEach(item => {
-            html += ` <td class="p-2">${escapeHtml(item.variant || '—')} <td class="p-2">${escapeHtml(item.orderNumber || '—')} <td class="p-2">${escapeHtml(item.band || '—')} <td class="p-2 text-right">${item.quantity} <td class="p-2">${new Date(item.date).toLocaleDateString()} `;
-          });
-          html += `</tbody> </div>`;
-        }
-        container.innerHTML = html;
-      } catch (err) { console.error(err); container.innerHTML = '<div class="text-red-500 text-center">Xatolik yuz berdi</div>'; }
+        const all=await fetchAPI('/api/expenses');
+        const today=getTodayKey();
+        const items=all.filter(e=>new Date(e.date).toISOString().split('T')[0]===today);
+        if (!items.length){c.innerHTML='<div class="text-center text-gray-400 py-4">Bugungi chiqim yo\'q</div>';return;}
+        const groups={};
+        items.forEach(i=>{const m=i.modelName||'Noma\'lum';if(!groups[m])groups[m]=[];groups[m].push(i);});
+        let html='';
+        for(const[mn,its]of Object.entries(groups)){html+=`<div class="mb-6"><h4 class="font-bold text-lg mb-2">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2">Variant</th><th class="p-2">Zakaz</th><th class="p-2">Band</th><th class="p-2 text-right">Miqdor</th><th class="p-2">Sana</th></tr></thead><tbody>`;its.forEach(i=>{html+=`<tr><td class="p-2">${escapeHtml(i.variant||'—')}</td><td class="p-2">${escapeHtml(i.orderNumber||'—')}</td><td class="p-2">${escapeHtml(i.band||'—')}</td><td class="p-2 text-right">${i.quantity}</td><td class="p-2">${new Date(i.date).toLocaleDateString()}</td></tr>`;});html+=`</tbody></table></div>`;}
+        c.innerHTML=html;
+      } catch(e){c.innerHTML='<div class="text-red-500 text-center">Xatolik</div>';}
     }
 
     async function showAccessoriesModal() {
-      const modal = document.getElementById('accessoriesModal');
-      const container = document.getElementById('modalAccessoriesList');
-      modal.classList.remove('hidden');
-      container.innerHTML = 'Yuklanmoqda...';
+      const modal=document.getElementById('accessoriesModal'), c=document.getElementById('modalAccessoriesList');
+      modal.classList.remove('hidden'); c.innerHTML='Yuklanmoqda...';
       try {
-        const accessories = await fetchAPI('/api/accessories');
-        if (!accessories.length) { container.innerHTML = '<div class="text-center text-gray-400 py-4">Hech qanday aksessuar mavjud emas</div>'; return; }
-        const groups = {};
-        accessories.forEach(item => { const name = item.productName; if (!groups[name]) groups[name] = []; groups[name].push(item); });
-        let html = '';
-        for (const [productName, items] of Object.entries(groups)) {
-          html += `<div class="mb-6"><h4 class="font-bold text-lg capitalize mb-2">📦 ${escapeHtml(productName)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2 text-left">Kod</th><th class="p-2 text-right">Soni (dona)</th><th class="p-2 text-right">Kg</th><th class="p-2 text-right">Metr</th> </thead><tbody>`;
-          items.forEach(item => {
-            html += ` <td class="p-2">${escapeHtml(item.code || '—')} <td class="p-2 text-right">${item.quantity !== null && item.quantity !== '' ? item.quantity : '—'} <td class="p-2 text-right">${item.kg !== null && item.kg !== '' ? item.kg : '—'} <td class="p-2 text-right">${item.meters !== null && item.meters !== '' ? item.meters : '—'} `;
-          });
-          html += `</tbody> </div>`;
-        }
-        container.innerHTML = html;
-      } catch (err) { console.error(err); container.innerHTML = '<div class="text-red-500 text-center">Xatolik yuz berdi</div>'; }
+        const items=await fetchAPI('/api/accessories');
+        if (!items.length){c.innerHTML='<div class="text-center text-gray-400 py-4">Aksessuar yo\'q</div>';return;}
+        const groups={};
+        items.forEach(i=>{if(!groups[i.productName])groups[i.productName]=[];groups[i.productName].push(i);});
+        let html='';
+        for(const[n,its]of Object.entries(groups)){html+=`<div class="mb-6"><h4 class="font-bold text-lg mb-2">📦 ${escapeHtml(n)}</h4><table class="w-full text-sm"><thead><tr class="bg-gray-100"><th class="p-2">Kod</th><th class="p-2 text-right">Soni</th><th class="p-2 text-right">Kg</th><th class="p-2 text-right">Metr</th></tr></thead><tbody>`;its.forEach(i=>{html+=`<tr><td class="p-2">${escapeHtml(i.code||'—')}</td><td class="p-2 text-right">${i.quantity??'—'}</td><td class="p-2 text-right">${i.kg??'—'}</td><td class="p-2 text-right">${i.meters??'—'}</td></tr>`;});html+=`</tbody></table></div>`;}
+        c.innerHTML=html;
+      } catch(e){c.innerHTML='<div class="text-red-500 text-center">Xatolik</div>';}
     }
 
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function closeModal(id){document.getElementById(id)?.classList.add('hidden');}
 
-    // -------------------- Fullscreen + Local Video Background (infinite loop) --------------------
-    let currentFullscreenOverlay = null;
-    let overlayStorageListener = null;
-    let originalGridSettings = { xGridDisplay: true, yGridColor: '#e2e8f0' };
-
-    function applyNoGrid(chartInstance) {
-      if (!chartInstance) return;
-      if (chartInstance.options.scales.x.grid.display !== undefined) originalGridSettings.xGridDisplay = chartInstance.options.scales.x.grid.display;
-      if (chartInstance.options.scales.y.grid.color !== undefined) originalGridSettings.yGridColor = chartInstance.options.scales.y.grid.color;
-      chartInstance.options.scales.x.grid.display = false;
-      chartInstance.options.scales.y.grid.display = false;
-      chartInstance.update();
-    }
-
-    function restoreOriginalGrid(chartInstance) {
-      if (!chartInstance) return;
-      chartInstance.options.scales.x.grid.display = originalGridSettings.xGridDisplay;
-      chartInstance.options.scales.y.grid.display = true;
-      chartInstance.options.scales.y.grid.color = originalGridSettings.yGridColor;
-      chartInstance.update();
-    }
+    // Fullscreen
+    let currentFullscreenOverlay=null, overlayStorageListener=null;
 
     async function updateFullscreenStats(statsContainer) {
       try {
-        const { products, incoming, expenses, staff, attendance, machines, accessories } = await fetchAllData();
-        const dailyTotals = getDailyTotals(products);
-        const todayTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type] || 0), 0);
-        const dazmol = dailyTotals['Dazmol'] || 0;
-        const upakovka = dailyTotals['Upakovka'] || 0;
-        const machinesCount = machines.length;
-        const accessoriesCount = accessories.length;
-        const { present, absent, late, totalStaff } = getTodayStaffStats(staff, attendance);
-        const { available, todayExpense } = computeWarehouseStats(incoming, expenses);
-        const cards = statsContainer.querySelectorAll('.stats-card');
-        if (cards.length === 3) {
-          cards[0].innerHTML = `<h3>📊 Kunlik ishlar</h3><div class="stat-row"><span class="stat-label">Bugungi jami tikuv:</span><span class="stat-value">${todayTotal}</span></div><div class="stat-row"><span class="stat-label">🔥 Dazmol:</span><span class="stat-value">${dazmol}</span></div><div class="stat-row"><span class="stat-label">📦 Upakovka:</span><span class="stat-value">${upakovka}</span></div><div class="stat-row"><span class="stat-label">🖨️ Mashinalar soni:</span><span class="stat-value">${machinesCount}</span></div>`;
-          cards[1].innerHTML = `<h3>👥 Davomat</h3><div class="stat-row"><span class="stat-label">Jami xodimlar:</span><span class="stat-value">${totalStaff}</span></div><div class="stat-row"><span class="stat-label">Kelganlar:</span><span class="stat-value">${present}</span></div><div class="stat-row"><span class="stat-label">Kelmaganlar:</span><span class="stat-value">${absent}</span></div><div class="stat-row"><span class="stat-label">⏰ Kech kelganlar:</span><span class="stat-value">${late}</span></div>`;
-          cards[2].innerHTML = `<h3>📦 Ombor holati</h3>
-            <div class="stat-row clickable" onclick="window.showIncomingModal && showIncomingModal()"><span class="stat-label">📦 Mavjud ish soni:</span><span class="stat-value ${available < 0 ? 'negative-value' : ''}">${available}</span></div>
-            <div class="stat-row clickable" onclick="window.showExpenseModal && showExpenseModal()"><span class="stat-label">📉 Kunlik chiqim:</span><span class="stat-value">${todayExpense}</span></div>
-            <div class="stat-row clickable" onclick="window.showAccessoriesModal && showAccessoriesModal()"><span class="stat-label">🔧 Aksessuarlar:</span><span class="stat-value">${accessoriesCount} tur</span></div>`;
+        const {products,incoming,expenses,staff,attendance,machines,accessories}=await fetchAllData();
+        const dailyTotals=getDailyTotals(products);
+        const todayTotal=BAND_TYPES.reduce((s,t)=>s+(dailyTotals[t]||0),0);
+        const {present,absent,late,totalStaff}=getTodayStaffStats(staff,attendance);
+        const {available,todayExpense}=computeWarehouseStats(incoming,expenses);
+        const cards=statsContainer.querySelectorAll('.stats-card');
+        if(cards.length===3){
+          cards[0].innerHTML=`<h3>📊 Kunlik ishlar</h3><div class="stat-row"><span class="stat-label">Bugungi jami:</span><span class="stat-value">${todayTotal}</span></div><div class="stat-row"><span class="stat-label">🔥 Dazmol:</span><span class="stat-value">${dailyTotals['Dazmol']||0}</span></div><div class="stat-row"><span class="stat-label">📦 Upakovka:</span><span class="stat-value">${dailyTotals['Upakovka']||0}</span></div><div class="stat-row"><span class="stat-label">🖨️ Mashinalar:</span><span class="stat-value">${machines.length}</span></div>`;
+          cards[1].innerHTML=`<h3>👥 Davomat</h3><div class="stat-row"><span class="stat-label">Jami:</span><span class="stat-value">${totalStaff}</span></div><div class="stat-row"><span class="stat-label">Kelganlar:</span><span class="stat-value">${present}</span></div><div class="stat-row"><span class="stat-label">Kelmaganlar:</span><span class="stat-value">${absent}</span></div><div class="stat-row"><span class="stat-label">⏰ Kech:</span><span class="stat-value">${late}</span></div>`;
+          cards[2].innerHTML=`<h3>📦 Ombor</h3><div class="stat-row clickable" onclick="showIncomingModal()"><span class="stat-label">Mavjud:</span><span class="stat-value ${available<0?'negative-value':''}">${available}</span></div><div class="stat-row clickable" onclick="showExpenseModal()"><span class="stat-label">Kunlik chiqim:</span><span class="stat-value">${todayExpense}</span></div><div class="stat-row clickable" onclick="showAccessoriesModal()"><span class="stat-label">🔧 Aksessuarlar:</span><span class="stat-value">${accessories.length} tur</span></div>`;
         }
-      } catch (err) { 
-        console.error('Fullscreen stats update error:', err); 
-        const cards = statsContainer.querySelectorAll('.stats-card');
-        cards.forEach(card => card.innerHTML = '<h3>❌ Statistika yuklanmadi</h3><p>Xatolik yuz berdi. Qayta urinib ko\'ring.</p>');
-      }
+      } catch(err){console.error('Fullscreen stats error:',err);}
     }
 
     async function showFullscreenChart(chartInstance, chartCanvas, chartCard) {
       if (currentFullscreenOverlay) return;
       if (!chartInstance || !chartCanvas) return;
-      const overlay = document.createElement('div');
-      overlay.className = 'fullscreen-overlay';
-      
-      // Video background – using local file /videos/bg.mp4, loops forever
-      const video = document.createElement('video');
-      video.id = 'bgVideo';
-      video.autoplay = true;
-      video.loop = true;          // infinite loop
-      video.muted = true;         // required for autoplay on most browsers
-      video.playsInline = true;   // important for mobile/tablet
-      video.preload = 'auto';
-      video.src = '/videos/bg.mp4'; // your local video file (public/videos/bg.mp4)
-      video.setAttribute('poster', '/images/bg-poster.jpg'); // optional fallback poster
-      video.style.filter = 'brightness(0.7)';
-      // Fallback: if video fails to load, use gradient background
-      video.onerror = () => {
-        overlay.style.background = 'radial-gradient(ellipse at 30% 40%, #0a2f4a, #031e2f)';
-      };
+
+      const overlay=document.createElement('div');
+      overlay.className='fullscreen-overlay';
+
+      const video=document.createElement('video');
+      video.id='bgVideo'; video.autoplay=true; video.loop=true; video.muted=true; video.playsInline=true; video.preload='auto';
+      video.src='/videos/bg.mp4';
+      video.style.filter='brightness(0.7)';
+      video.onerror=()=>{ overlay.style.background='radial-gradient(ellipse at 30% 40%, #0a2f4a, #031e2f)'; };
       overlay.appendChild(video);
-      
-      // Stats cards
-      const statsContainer = document.createElement('div');
-      statsContainer.className = 'stats-cards-container';
-      for (let i = 0; i < 3; i++) { const card = document.createElement('div'); card.className = 'stats-card'; card.innerHTML = '<h3>📊 Yuklanmoqda...</h3>'; statsContainer.appendChild(card); }
-      
-      // Chart wrapper
-      const chartWrapper = document.createElement('div');
-      chartWrapper.className = 'chart-wrapper';
-      const originalParent = chartCanvas.parentNode;
-      chartCanvas.height = 1200; // TV uchun katta height
-      
-      // Nol ma'lumot check
-      const { products } = await fetchAllData();
-      const dailyTotals = getDailyTotals(products);
-      const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type] || 0), 0);
-      
-      if (dailyTotal === 0) {
-        const noDataMsg = document.createElement('div');
-        noDataMsg.style.cssText = 'display:flex; align-items:center; justify-content:center; height:100%; text-align:center; flex-direction:column; color:white;';
-        noDataMsg.innerHTML = `
-          <div style="font-size:3rem; margin-bottom:1rem;">📭</div>
-          <h2 style="font-size:1.5rem; margin-bottom:0.5rem;">Bugun hali hech qanday ma'lumot qo'shilmagan</h2>
-          <p style="font-size:1rem; opacity:0.8;">Tikish ma'lumotlarini kiritishni boshlang...</p>
-        `;
-        chartWrapper.appendChild(noDataMsg);
+
+      const statsContainer=document.createElement('div');
+      statsContainer.className='stats-cards-container';
+      for(let i=0;i<3;i++){const card=document.createElement('div');card.className='stats-card';card.innerHTML='<h3>📊 Yuklanmoqda...</h3>';statsContainer.appendChild(card);}
+
+      const chartWrapper=document.createElement('div');
+      chartWrapper.className='chart-wrapper';
+      const originalParent=chartCanvas.parentNode;
+      chartCanvas.height=1200;
+
+      const {products}=await fetchAllData();
+      const dailyTotals=getDailyTotals(products);
+      const dailyTotal=BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
+
+      if(dailyTotal===0){
+        const msg=document.createElement('div');
+        msg.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;text-align:center;flex-direction:column;color:white;';
+        msg.innerHTML='<div style="font-size:3rem;margin-bottom:1rem;">📭</div><h2 style="font-size:1.5rem;">Bugun hali maʼlumot qo\'shilmagan</h2>';
+        chartWrapper.appendChild(msg);
       } else {
         chartWrapper.appendChild(chartCanvas);
       }
-      
+
       await updateFullscreenStats(statsContainer);
-      
-      const closeBtn = document.createElement('button');
-      closeBtn.innerHTML = '✖';
-      closeBtn.className = 'close-fullscreen';
-      closeBtn.onclick = () => document.exitFullscreen();
-      
+
+      const closeBtn=document.createElement('button');
+      closeBtn.innerHTML='✖'; closeBtn.className='close-fullscreen';
+      closeBtn.onclick=()=>document.exitFullscreen();
+
       overlay.appendChild(closeBtn);
       overlay.appendChild(statsContainer);
       overlay.appendChild(chartWrapper);
-      
-      // Marquee footer qo'shish
-      const marqueeFooter = document.createElement('div');
-      marqueeFooter.className = 'marquee-footer';
-      marqueeFooter.innerHTML = '<div class="marquee-text">✨ Created by <strong>Makhmudov</strong> ✨ Ombor statistikasi | Real-time data visualization ✨ </div>';
+
+      const marqueeFooter=document.createElement('div');
+      marqueeFooter.className='marquee-footer';
+      marqueeFooter.innerHTML='<div class="marquee-text">✨ Created by <strong>Makhmudov</strong> ✨ Ombor statistikasi | Real-time data visualization ✨</div>';
       document.body.appendChild(marqueeFooter);
-      
       document.body.appendChild(overlay);
-      currentFullscreenOverlay = { overlay, chartCanvas, originalParent, chartInstance, statsContainer, marqueeFooter };
-      
-      // Attempt to play video (muted autoplay usually works, but in some browsers it may need user interaction)
-      video.play().catch(e => console.warn("Video autoplay blocked, but will play after user interaction", e));
-      
-      // Request fullscreen
-      overlay.requestFullscreen().catch(err => console.error("Fullscreen request failed:", err)).then(() => {
-        setTimeout(() => {
-          chartInstance.resize();
-          chartInstance.update();
-          requestAnimationFrame(() => { chartInstance.resize(); chartInstance.update(); });
-        }, 100);
+      currentFullscreenOverlay={overlay,chartCanvas,originalParent,chartInstance,statsContainer,marqueeFooter};
+
+      video.play().catch(e=>console.warn('Video autoplay blocked',e));
+
+      overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:',err)).then(()=>{
+        setTimeout(()=>{chartInstance.resize();chartInstance.update();},100);
       });
-      
-      overlayStorageListener = async () => { if (currentFullscreenOverlay && currentFullscreenOverlay.statsContainer) await updateFullscreenStats(currentFullscreenOverlay.statsContainer); };
-      window.addEventListener('storage', overlayStorageListener);
-      
-      const fullscreenChangeHandler = () => {
-        if (!document.fullscreenElement) {
-          if (currentFullscreenOverlay) {
-            const { chartCanvas, originalParent, chartInstance, overlay, marqueeFooter } = currentFullscreenOverlay;
-            originalParent.appendChild(chartCanvas);
-            overlay.remove();
-            if (marqueeFooter) marqueeFooter.remove();
-            // Destroy and recreate chart to ensure proper rendering
-            if (chartInstance) {
-              chartInstance.destroy();
-              // Clear the canvas context
-              const ctx = chartCanvas.getContext('2d');
-              if (ctx) {
-                ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-              }
-              // Reset canvas height to original
-              if (chartCanvas.id === 'quantityChart') {
-                chartCanvas.height = 500;
-                mainChart = null;
-              } else if (chartCanvas.id === 'yearlyChart') {
-                chartCanvas.height = 300;
-                yearlyChart = null;
-              }
-            }
-            // Re-render based on chart type
-            setTimeout(async () => {
-              const data = await fetchAllData();
-              if (chartCanvas.id === 'quantityChart') {
-                renderMainChart(data.products);
-              } else if (chartCanvas.id === 'yearlyChart') {
-                renderYearlyChart(data.products);
-              }
-            }, 100);
-            currentFullscreenOverlay = null;
-            if (overlayStorageListener) window.removeEventListener('storage', overlayStorageListener);
+
+      overlayStorageListener=async()=>{ if(currentFullscreenOverlay?.statsContainer) await updateFullscreenStats(currentFullscreenOverlay.statsContainer); };
+      window.addEventListener('storage',overlayStorageListener);
+
+      const fsChangeHandler=()=>{
+        if(!document.fullscreenElement && currentFullscreenOverlay){
+          const{chartCanvas,originalParent,chartInstance,overlay,marqueeFooter}=currentFullscreenOverlay;
+          originalParent.appendChild(chartCanvas);
+          overlay.remove();
+          if(marqueeFooter)marqueeFooter.remove();
+          // ✅ FIX 2: destroy + canvas height sıfırla + re-render
+          if(chartInstance){
+            chartInstance.destroy();
+            const ctx=chartCanvas.getContext('2d');
+            if(ctx) ctx.clearRect(0,0,chartCanvas.width,chartCanvas.height);
+            if(chartCanvas.id==='quantityChart'){chartCanvas.height=500;mainChart=null;}
+            else if(chartCanvas.id==='yearlyChart'){chartCanvas.height=300;yearlyChart=null;}
           }
-          document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
-        } else {
-          setTimeout(() => {
-            chartInstance.resize();
-            chartInstance.update();
-            requestAnimationFrame(() => { chartInstance.resize(); chartInstance.update(); });
-          }, 100);
+          setTimeout(async()=>{
+            const data=await fetchAllData();
+            if(chartCanvas.id==='quantityChart') renderMainChart(data.products);
+            else if(chartCanvas.id==='yearlyChart') renderYearlyChart(data.products);
+          },100);
+          currentFullscreenOverlay=null;
+          if(overlayStorageListener) window.removeEventListener('storage',overlayStorageListener);
+          document.removeEventListener('fullscreenchange',fsChangeHandler);
+        } else if(document.fullscreenElement){
+          setTimeout(()=>{chartInstance.resize();chartInstance.update();},100);
         }
       };
-      document.addEventListener('fullscreenchange', fullscreenChangeHandler);
+      document.addEventListener('fullscreenchange',fsChangeHandler);
     }
 
     function bindFullscreenButtons() {
-      const mainBtn = document.getElementById('fullscreenMainBtn');
-      const yearlyBtn = document.getElementById('fullscreenYearlyBtn');
-      const mainChartCanvas = document.getElementById('quantityChart');
-      const yearlyChartCanvas = document.getElementById('yearlyChart');
-      if (mainBtn && mainChartCanvas) {
-        mainBtn.addEventListener('click', () => { if (mainChart) showFullscreenChart(mainChart, mainChartCanvas, document.getElementById('mainChartCard')); });
-      }
-      if (yearlyBtn && yearlyChartCanvas) {
-        yearlyBtn.addEventListener('click', () => { if (yearlyChart) showFullscreenChart(yearlyChart, yearlyChartCanvas, document.getElementById('yearlyChartCard')); });
-      }
+      const mainBtn=document.getElementById('fullscreenMainBtn');
+      const yearlyBtn=document.getElementById('fullscreenYearlyBtn');
+      const mainCanvas=document.getElementById('quantityChart');
+      const yearlyCanvas=document.getElementById('yearlyChart');
+      if(mainBtn&&mainCanvas) mainBtn.addEventListener('click',()=>{ if(mainChart) showFullscreenChart(mainChart,mainCanvas,document.getElementById('mainChartCard')); });
+      if(yearlyBtn&&yearlyCanvas) yearlyBtn.addEventListener('click',()=>{ if(yearlyChart) showFullscreenChart(yearlyChart,yearlyCanvas,document.getElementById('yearlyChartCard')); });
     }
 
-    // -------------------- Asosiy refresh (animatsiyali) --------------------
     async function refreshAll() {
       try {
-        const { products, incoming, expenses, staff, attendance, machines, accessories } = await fetchAllData();
-        const totalAll = products.filter(p => BAND_TYPES.includes(p.productType)).reduce((s,p) => s + p.quantity, 0);
-        
-        // Kunlik ombor hisobi
-        const dailyTotals = getDailyTotals(products);
-        const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type] || 0), 0);
-        
-        // DOM element updates with null checks
-        const el1 = document.getElementById('totalSumStat');
-        if (el1) el1.innerText = totalAll;
-        
-        const elDaily = document.getElementById('dailySumStat');
-        if (elDaily) elDaily.innerText = dailyTotal;
-        
-        const extra = getExtraStats(products);
-        const el2 = document.getElementById('dazmolTotal');
-        if (el2) el2.innerText = extra.dazmolAll;
-        const el3 = document.getElementById('upakovkaTotal');
-        if (el3) el3.innerText = extra.upakovkaAll;
-        
-        const allTimeBands = aggregateAllTimeBands(products);
-        let topBand = null, topQty = 0;
-        for (const [band, qty] of Object.entries(allTimeBands)) if (qty > topQty) { topQty = qty; topBand = band; }
-        const el4 = document.getElementById('topBandName');
-        if (el4) el4.innerText = topBand || '—';
-        const el5 = document.getElementById('topBandQty');
-        if (el5) el5.innerText = topQty;
-        
-        const { available, todayExpense } = computeWarehouseStats(incoming, expenses);
-        const availSpan = document.getElementById('availableWorkStat');
-        if (availSpan) {
-          availSpan.innerText = available;
-          if (available < 0) availSpan.classList.add('negative-value'); else availSpan.classList.remove('negative-value');
-        }
-        const el6 = document.getElementById('dailyExpenseStat');
-        if (el6) el6.innerText = todayExpense;
-        const el7 = document.getElementById('accessoriesCountStat');
-        if (el7) el7.innerText = accessories.length;
-        
+        const {products,incoming,expenses,staff,attendance,machines,accessories}=await fetchAllData();
+        const totalAll=products.filter(p=>BAND_TYPES.includes(p.productType)).reduce((s,p)=>s+p.quantity,0);
+        const dailyTotals=getDailyTotals(products);
+        const dailyTotal=BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
+
+        const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.innerText=val;};
+        setEl('totalSumStat',totalAll);
+        setEl('dailySumStat',dailyTotal);
+
+        const extra=getExtraStats(products);
+        setEl('dazmolTotal',extra.dazmolAll);
+        setEl('upakovkaTotal',extra.upakovkaAll);
+
+        const allTimeBands=aggregateAllTimeBands(products);
+        let topBand=null, topQty=0;
+        for(const[band,qty]of Object.entries(allTimeBands)) if(qty>topQty){topQty=qty;topBand=band;}
+        setEl('topBandName',topBand||'—');
+        setEl('topBandQty',topQty);
+
+        const{available,todayExpense}=computeWarehouseStats(incoming,expenses);
+        const availSpan=document.getElementById('availableWorkStat');
+        if(availSpan){availSpan.innerText=available;available<0?availSpan.classList.add('negative-value'):availSpan.classList.remove('negative-value');}
+        setEl('dailyExpenseStat',todayExpense);
+        setEl('accessoriesCountStat',accessories.length);
+
         renderMainChart(products);
         renderYearlyChart(products);
-        const last30Bands = aggregateLast30Days(products);
-        renderBandBarChart(last30Bands);
-        renderRanking(last30Bands);
-        renderExtraStats(extra.upakovkaAll, extra.upakovka30, extra.dazmolAll, extra.dazmol30);
-        renderMonthlyTable(incoming, expenses);
-        
-        const cards = document.querySelectorAll('.stats-card');
-        if (cards && cards.length > 0) {
-          cards.forEach(card => {
-            card.classList.add('refresh-pulse');
-            setTimeout(() => card.classList.remove('refresh-pulse'), 500);
-          });
-        }
-        
-        // Full screen'da bo'lsa ham yangilash
-        if (currentFullscreenOverlay && currentFullscreenOverlay.statsContainer && currentFullscreenOverlay.chartInstance) {
+        const last30=aggregateLast30Days(products);
+        renderBandBarChart(last30);
+        renderRanking(last30);
+        renderExtraStats(extra.upakovkaAll,extra.upakovka30,extra.dazmolAll,extra.dazmol30);
+        renderMonthlyTable(incoming,expenses);
+
+        document.querySelectorAll('.stats-card').forEach(card=>{
+          card.classList.add('refresh-pulse');
+          setTimeout(()=>card.classList.remove('refresh-pulse'),500);
+        });
+
+        if(currentFullscreenOverlay?.statsContainer){
           await updateFullscreenStats(currentFullscreenOverlay.statsContainer);
-          // Chart ham yangilansin
-          if (currentFullscreenOverlay.chartInstance && currentFullscreenOverlay.chartInstance.update) {
-            try {
-              currentFullscreenOverlay.chartInstance.update();
-            } catch (e) { console.warn('Fullscreen chart update error:', e); }
-          }
+          try{currentFullscreenOverlay.chartInstance?.update();}catch(e){}
         }
-      } catch (err) { console.error('refreshAll error:', err); }
+      } catch(err){console.error('refreshAll error:',err);}
     }
 
-    // -------------------- Kundalik reset --------------------
     function setupDailyReset() {
-      const today = getTodayKey();
-      const lastDate = localStorage.getItem('lastActiveDate');
-      
-      if (lastDate !== today) {
-        // Yangi kun! Barni reset qilish kerak
-        localStorage.setItem('lastActiveDate', today);
-        console.log('Daily reset - yangi kun:', today);
-      }
-      
-      // Hozirgi saat 00:00'da next reset uchun timer
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      
-      const timeUntilReset = tomorrow.getTime() - now.getTime();
-      setTimeout(() => {
-        location.reload(); // Sahifalni yangilash
-      }, timeUntilReset);
+      const today=getTodayKey();
+      if(localStorage.getItem('lastActiveDate')!==today) localStorage.setItem('lastActiveDate',today);
+      const now=new Date();
+      const tomorrow=new Date(now);
+      tomorrow.setDate(tomorrow.getDate()+1);
+      tomorrow.setHours(0,0,0,0);
+      setTimeout(()=>location.reload(), tomorrow.getTime()-now.getTime());
     }
 
-    // -------------------- Note functionality --------------------
     function loadNotes() {
-      const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-      const savedNotesDiv = document.getElementById('savedNotes');
-      savedNotesDiv.innerHTML = notes.map((note, index) => 
-        `<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center">
-          <span>${escapeHtml(note.text)}</span>
-          <small class="text-gray-500">${new Date(note.date).toLocaleString('uz-UZ')}</small>
-          <button onclick="deleteNote(${index})" class="text-red-500 ml-2">✖</button>
-        </div>`
-      ).join('');
+      const notes=JSON.parse(localStorage.getItem('grafikNotes')||'[]');
+      const div=document.getElementById('savedNotes');
+      div.innerHTML=notes.map((n,i)=>`<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center"><span>${escapeHtml(n.text)}</span><small class="text-gray-500">${new Date(n.date).toLocaleString('uz-UZ')}</small><button onclick="deleteNote(${i})" class="text-red-500 ml-2">✖</button></div>`).join('');
     }
+    function saveNote(text){const notes=JSON.parse(localStorage.getItem('grafikNotes')||'[]');notes.push({text,date:new Date().toISOString()});localStorage.setItem('grafikNotes',JSON.stringify(notes));loadNotes();}
+    function deleteNote(i){const notes=JSON.parse(localStorage.getItem('grafikNotes')||'[]');notes.splice(i,1);localStorage.setItem('grafikNotes',JSON.stringify(notes));loadNotes();}
+    window.deleteNote=deleteNote;
 
-    function saveNote(text) {
-      const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-      notes.push({ text, date: new Date().toISOString() });
-      localStorage.setItem('grafikNotes', JSON.stringify(notes));
-      loadNotes();
-    }
+    function escapeHtml(str){if(!str)return'';return str.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
 
-    function deleteNote(index) {
-      const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-      notes.splice(index, 1);
-      localStorage.setItem('grafikNotes', JSON.stringify(notes));
-      loadNotes();
-    }
-
-    window.deleteNote = deleteNote;
-
-    // -------------------- Boshlash --------------------
-    document.addEventListener('DOMContentLoaded', () => {
-      // Hide loading overlay immediately
-      const loadingOverlay = document.getElementById('loadingOverlay');
-      if (loadingOverlay) {
-        loadingOverlay.style.display = 'none';
-      }
-      
+    document.addEventListener('DOMContentLoaded',()=>{
+      const lo=document.getElementById('loadingOverlay');
+      if(lo)lo.style.display='none';
       setupDailyReset();
       refreshAll();
       bindFullscreenButtons();
-      setInterval(refreshAll, 30000);
-      document.getElementById('availableWorkRow')?.addEventListener('click', showIncomingModal);
-      document.getElementById('dailyExpenseRow')?.addEventListener('click', showExpenseModal);
-      document.getElementById('accessoriesRow')?.addEventListener('click', showAccessoriesModal);
-      document.querySelectorAll('.close-modal').forEach(btn => {
-        btn.addEventListener('click', () => { const modalId = btn.getAttribute('data-modal'); if (modalId) closeModal(modalId); });
-      });
-      window.addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) e.target.classList.add('hidden'); });
+      setInterval(refreshAll,30000);
 
-      // Note functionality
-      document.getElementById('noteBtn').addEventListener('click', () => {
-        document.getElementById('noteModal').classList.remove('hidden');
-        loadNotes();
-      });
-      document.getElementById('saveNoteBtn').addEventListener('click', () => {
-        const text = document.getElementById('noteText').value.trim();
-        if (text) {
-          saveNote(text);
-          document.getElementById('noteText').value = '';
-        }
-      });
-      document.getElementById('clearNoteBtn').addEventListener('click', () => {
-        localStorage.removeItem('grafikNotes');
-        loadNotes();
-      });
+      document.getElementById('availableWorkRow')?.addEventListener('click',showIncomingModal);
+      document.getElementById('dailyExpenseRow')?.addEventListener('click',showExpenseModal);
+      document.getElementById('accessoriesRow')?.addEventListener('click',showAccessoriesModal);
+      document.querySelectorAll('.close-modal').forEach(btn=>btn.addEventListener('click',()=>{const id=btn.getAttribute('data-modal');if(id)closeModal(id);}));
+      window.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))e.target.classList.add('hidden');});
+
+      document.getElementById('noteBtn').addEventListener('click',()=>{document.getElementById('noteModal').classList.remove('hidden');loadNotes();});
+      document.getElementById('saveNoteBtn').addEventListener('click',()=>{const t=document.getElementById('noteText').value.trim();if(t){saveNote(t);document.getElementById('noteText').value='';}});
+      document.getElementById('clearNoteBtn').addEventListener('click',()=>{localStorage.removeItem('grafikNotes');loadNotes();});
     });
 
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-    }
-
-    window.showIncomingModal = showIncomingModal;
-    window.showExpenseModal = showExpenseModal;
-    window.showAccessoriesModal = showAccessoriesModal;
+    window.showIncomingModal=showIncomingModal;
+    window.showExpenseModal=showExpenseModal;
+    window.showAccessoriesModal=showAccessoriesModal;
   </script>
 </body>
 </html>
