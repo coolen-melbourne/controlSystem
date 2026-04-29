@@ -140,6 +140,67 @@ const sendTelegramMessage = async (message, chatId = null) => {
   }
 };
 
+async function getTTSBuffer(text, lang = 'uz') {
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${lang}&client=tw-ob`;
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+  });
+  if (response.status !== 200) throw new Error('TTS service failed');
+  return response.data;
+}
+
+async function buildAITextSummary(stats) {
+  const { totalToday, totalOverall, topBand, topQty, upakovkaToday, dazmolToday, availableWork, expenseToday, accessoriesCount, zeroBands, belowPlanBands } = stats;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const prompt = `Siz ombor va tikuv statistikasi bo'yicha eng aniq va amaliy xulosa yozadigan ekspert siz. Foydalanuvchi bugungi bandlar, upakovka va dazmol ishlari, ombor holati va rejaga nisbatan natija haqida tezkor va qisqa xulosa kutmoqda. Xulosani O'zbek tilida, ravon va kuzatuvchan gaplar bilan yozing. 1-18 bandlar uchun reja 1000 dona, Upakovka va Dazmol uchun reja 10000 dona.
+
+Bugungi ma'lumotlar:
+- Bugungi bandlar jami: ${totalToday} dona
+- Jami tikuv: ${totalOverall} dona
+- Eng ko'p tikkan band: ${topBand} (${topQty} dona)
+- Upakovka: ${upakovkaToday} dona
+- Dazmol: ${dazmolToday} dona
+- Ombordagi mavjud ish: ${availableWork} dona
+- Bugungi chiqim: ${expenseToday} dona
+- Aksessuarlar: ${accessoriesCount} ta
+- 0 darajali bandlar: ${zeroBands.length}
+- 1000 dan past bajarilgan bandlar: ${belowPlanBands.length}
+
+Faqat xulosa yozing, sarlavha qo'ymang.`;
+
+  if (openaiKey) {
+    try {
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: 'gpt-3.5-turbo',
+          messages: [
+            { role: 'system', content: 'Siz tezkor statistik xulosachi va ombor nazoratchisisiz.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 300
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${openaiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data?.choices?.[0]?.message?.content?.trim() || '';
+    } catch (err) {
+      console.error('OpenAI summary error:', err.message || err);
+    }
+  }
+
+  const zeroText = zeroBands.length ? zeroBands.join(', ') : 'yo`q';
+  return `Bugungi ishlab chiqarishdagi eng muhim xulosalar: bandlar bo'yicha umumiy ish ${totalToday} dona, ammo ${belowPlanBands.length} ta band hali rejadan past va ${zeroBands.length} tasi to'liq nolga tushgan (${zeroText}). Upakovka ${upakovkaToday} dona, Dazmol ${dazmolToday} dona, ular 10000 lik rejaga nisbatan orqada. Ombordagi ish hajmi ${availableWork} dona, bugungi chiqim ${expenseToday} dona. Hozirda eng katta diqqatni faqat past ko'rsatkichli bandlar va tezroq qayta tiklashga qaratish kerak.`;
+}
+
 // -------------------- Band qo'shish uchun state --------------------
 const userState = new Map();
 
@@ -148,11 +209,11 @@ if (bot) {
   const mainMenuKeyboard = {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📊 Statistika", callback_data: "stats" }, { text: "📈 Kunlik / Jami", callback_data: "daily_total" }],
-        [{ text: "📥 Kroy kirim", callback_data: "kroy" }, { text: "📤 Kroy chiqim", callback_data: "chiqim" }],
-        [{ text: "👥 Kadrlar", callback_data: "kadrlar" }, { text: "🖨️ Mashinalar", callback_data: "mashinalar" }],
-        [{ text: "🧵 Aksessuarlar", callback_data: "aksessuar" }, { text: "➕ Bandga qiymat", callback_data: "add_band" }],
-        [{ text: "🔍 Qidirish", switch_inline_query_current_chat: "" }]
+        [{ text: "📊 Statistika", callback_data: "stats" }, { text: "🤖 AI xulosasi", callback_data: "ai_summary" }],
+        [{ text: "📈 Kunlik / Jami", callback_data: "daily_total" }, { text: "📥 Kroy kirim", callback_data: "kroy" }],
+        [{ text: "📤 Kroy chiqim", callback_data: "chiqim" }, { text: "👥 Kadrlar", callback_data: "kadrlar" }],
+        [{ text: "🖨️ Mashinalar", callback_data: "mashinalar" }, { text: "🧵 Aksessuarlar", callback_data: "aksessuar" }],
+        [{ text: "➕ Bandga qiymat", callback_data: "add_band" }, { text: "🔍 Qidirish", switch_inline_query_current_chat: "" }]
       ]
     }
   };
@@ -238,6 +299,8 @@ if (bot) {
       await sendStaffList(chatId, parseInt(data.split('_')[2]), messageId);
     } else if (data === 'stats') {
       await sendFullStatsToChat(chatId);
+    } else if (data === 'ai_summary') {
+      await sendAISummaryOnly(chatId);
     } else if (data === 'daily_total') {
       await sendDailyTotalStats(chatId);
     } else if (data === 'kroy') {
@@ -285,10 +348,16 @@ async function sendFullStatsToChat(chatId) {
     const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
     const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
     const totalOverall = await getTotalProduction();
-    const bandStats = {};
-    allProducts.forEach(p => { if (p.productType.includes('band')) bandStats[p.productType]=(bandStats[p.productType]||0)+p.quantity; });
-    let topBand='—', topQty=0;
-    for (const [band,qty] of Object.entries(bandStats)) if (qty>topQty) { topBand=band; topQty=qty; }
+    const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
+    allProducts.forEach(p => {
+      if (BAND_TYPES.includes(p.productType)) {
+        bandStats[p.productType] += p.quantity;
+      }
+    });
+    let topBand = '—', topQty = 0;
+    for (const [band, qty] of Object.entries(bandStats)) {
+      if (qty > topQty) { topBand = band; topQty = qty; }
+    }
     const upakovkaToday = allProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
     const dazmolToday = allProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
     const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
@@ -299,7 +368,18 @@ async function sendFullStatsToChat(chatId) {
     const presentCount = attendances.filter(a=>a.checkIn).length;
     const lateCount = attendances.filter(a=>a.checkIn&&a.lateMinutes>0).length;
     const machinesCount = await Machine.countDocuments();
-    const message = `
+    const accessoriesCount = await Accessory.countDocuments();
+
+    const bandLines = BAND_TYPES.map(band => {
+      const qty = bandStats[band] || 0;
+      const pct = Math.min(100, Math.round((qty / 1000) * 100));
+      const icon = pct >= 80 ? '🟢' : pct >= 50 ? '🟡' : '🔴';
+      return `• ${icon} ${band}: <code>${qty}/1000</code> (${pct}%)`;
+    }).join('\n');
+    const zeroBands = BAND_TYPES.filter(band => (bandStats[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (bandStats[band] || 0) < 1000);
+
+    const statsMessage = `
 📊 <b>📅 Statistika – ${moment().format("DD.MM.YYYY, HH:mm")}</b>
 
 🔹 <b>Ishlab chiqarish</b>
@@ -309,22 +389,103 @@ async function sendFullStatsToChat(chatId) {
 • 🔥 Dazmol: ${dazmolToday} dona
 • 📦 Upakovka: ${upakovkaToday} dona
 
+📊 <b>Bandlar bo'yicha jarayon</b>
+${bandLines}
+
 📦 <b>Ombor holati</b>
-• Mavjud ish: ${totalIncoming-totalExpense} dona
+• Mavjud ish: ${totalIncoming - totalExpense} dona
 • Kunlik chiqim: ${expenseToday} dona
 
 👥 <b>Davomat</b>
 • Jami xodimlar: ${totalStaff}
 • ✅ Kelganlar: ${presentCount}
-• ❌ Kelmaganlar: ${totalStaff-presentCount}
+• ❌ Kelmaganlar: ${totalStaff - presentCount}
 • ⏰ Kech qolganlar: ${lateCount}
 
 🖨️ Mashinalar soni: ${machinesCount}
-    `;
-    await sendTelegramMessage(message, chatId);
+`;
+
+    await bot.sendMessage(chatId, statsMessage, { parse_mode: 'HTML' });
+
+    const summaryText = await buildAITextSummary({
+      totalToday,
+      totalOverall,
+      topBand,
+      topQty,
+      upakovkaToday,
+      dazmolToday,
+      availableWork: totalIncoming - totalExpense,
+      expenseToday,
+      accessoriesCount,
+      zeroBands,
+      belowPlanBands
+    });
+
+    await bot.sendMessage(chatId, `<b>AI xulosasi:</b>\n${escapeHtml(summaryText)}`, { parse_mode: 'HTML' });
+    try {
+      const audioBuffer = await getTTSBuffer(summaryText, 'uz');
+      await bot.sendAudio(chatId, audioBuffer, { caption: 'AI xulosasi (Alisa tovushida)', parse_mode: 'HTML', filename: 'summary.mp3' });
+    } catch (ttsErr) {
+      console.warn('TTS audio yuborilmadi:', ttsErr.message || ttsErr);
+      await bot.sendMessage(chatId, '⚠️ AI xulosasini audio shaklda yuborishda muammo yuz berdi, ammo matn yuborildi.', { parse_mode: 'HTML' });
+    }
   } catch (err) {
     console.error('sendFullStatsToChat error:', err);
-    await sendTelegramMessage("❌ Statistika yuklanmadi.", chatId);
+    await bot.sendMessage(chatId, '❌ Statistika yuklanmadi.', { parse_mode: 'HTML' });
+  }
+}
+
+async function sendAISummaryOnly(chatId) {
+  try {
+    const todayStart = moment().startOf('day').toDate();
+    const todayEnd = moment().endOf('day').toDate();
+    const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
+    const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
+    const totalOverall = await getTotalProduction();
+    const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
+    allProducts.forEach(p => {
+      if (BAND_TYPES.includes(p.productType)) {
+        bandStats[p.productType] += p.quantity;
+      }
+    });
+    let topBand = '—', topQty = 0;
+    for (const [band, qty] of Object.entries(bandStats)) {
+      if (qty > topQty) { topBand = band; topQty = qty; }
+    }
+    const upakovkaToday = allProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
+    const dazmolToday = allProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
+    const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
+    const totalExpense = (await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
+    const expenseToday = (await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
+    const accessoriesCount = await Accessory.countDocuments();
+    const zeroBands = BAND_TYPES.filter(band => (bandStats[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (bandStats[band] || 0) < 1000);
+
+    const summaryText = await buildAITextSummary({
+      totalToday,
+      totalOverall,
+      topBand,
+      topQty,
+      upakovkaToday,
+      dazmolToday,
+      availableWork: totalIncoming - totalExpense,
+      expenseToday,
+      accessoriesCount,
+      zeroBands,
+      belowPlanBands
+    });
+
+    await bot.sendMessage(chatId, `<b>🤖 AI xulosasi:</b>\n${escapeHtml(summaryText)}`, { parse_mode: 'HTML' });
+    try {
+      const audioBuffer = await getTTSBuffer(summaryText, 'uz');
+      await bot.sendAudio(chatId, audioBuffer, { caption: 'AI xulosasi (Alisa tovushida)', parse_mode: 'HTML', filename: 'summary.mp3' });
+    } catch (ttsErr) {
+      console.warn('TTS audio yuborilmadi:', ttsErr.message || ttsErr);
+      await bot.sendMessage(chatId, '⚠️ AI xulosasini audio shaklda yuborishda muammo yuz berdi, ammo matn yuborildi.', { parse_mode: 'HTML' });
+    }
+  } catch (err) {
+    console.error('sendAISummaryOnly error:', err);
+    await bot.sendMessage(chatId, '❌ AI xulosasi yuklanmadi.', { parse_mode: 'HTML' });
   }
 }
 
@@ -732,6 +893,76 @@ app.get("/api/stats/today", async (req, res) => {
     const machinesCount=await Machine.countDocuments();
     res.json({ todayTotals, upakovkaTotal, dazmolTotal, topBand, topBandQty:topQty, availableWork:totalIncoming-totalExpense, expenseToday, accessoriesCount, totalStaff, presentCount, absentCount:totalStaff-presentCount, lateCount, machinesCount });
   } catch(err){ console.error("Stats error:",err); res.status(500).json({error:"Server error"}); }
+});
+
+app.get("/api/ai-summary", async (req, res) => {
+  try {
+    const todayStart = moment().startOf("day").toDate();
+    const todayEnd = moment().endOf("day").toDate();
+    const bandTotals = await ProductManager.aggregate([
+      { $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: { $in: BAND_TYPES } } },
+      { $group: { _id: "$productType", total: { $sum: "$quantity" } } }
+    ]);
+    const bandTotalsObj = Object.fromEntries(bandTotals.map(b => [b._id, b.total]));
+    const upakovkaToday = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: "Upakovka" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const dazmolToday = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: "Dazmol" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const totalIncoming = (await IncomingProduct.aggregate([{ $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const totalExpense = (await Expense.aggregate([{ $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const todayExpense = (await Expense.aggregate([{ $match: { date: { $gte: todayStart, $lte: todayEnd } } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const accessoriesCount = await Accessory.countDocuments();
+    const totalToday = BAND_TYPES.reduce((sum, band) => sum + (bandTotalsObj[band] || 0), 0);
+    const zeroBands = BAND_TYPES.filter(band => (bandTotalsObj[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (bandTotalsObj[band] || 0) < 1000);
+    let topBand = null; let topQty = 0;
+    for (const [band, qty] of Object.entries(bandTotalsObj)) {
+      if (qty > topQty) { topQty = qty; topBand = band; }
+    }
+
+    const summaryPrompt = `Siz ombor va tikuv statistikasi uchun kuchli, aniq va tezkor xulosa tayyorlaysiz. Foydalanuvchiga bugungi qilgan ishlarini, reja bilan hozirgi ahvolni, eng katta muammoni va nimaga e'tibor berish kerakligini aytib bering. Har band uchun rejalar:
+- 1-18 band: har biri 1000 dona
+- Upakovka va Dazmol: har biri 10000 dona
+
+Bugungi ma'lumot:
+- Umumiy bandlar: ${totalToday} dona
+- Top band: ${topBand || 'yo`q'} (${topQty} dona)
+- Nolinchi bandlar: ${zeroBands.length} ta (${zeroBands.slice(0,5).join(', ') || 'yo`q'})
+- 1000 dan kam bajarilgan bandlar: ${belowPlanBands.length} ta
+- Upakovka: ${upakovkaToday} dona
+- Dazmol: ${dazmolToday} dona
+- Ombordagi mavjud ish: ${totalIncoming - totalExpense} dona
+- Bugungi chiqim: ${todayExpense} dona
+- Aksessuarlar soni: ${accessoriesCount}
+
+Faqat qattiq va amaliy xulosani O'zbek tilida yozing. Sarlavha qo'ymang, qisqa paragraf tarzida taqdim eting.`;
+
+    const openaiKey = process.env.OPENAI_API_KEY;
+    let summaryText;
+    if (openaiKey) {
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "Siz tezkor statistik xulosachi va ombor nazoratchisisiz." },
+            { role: "user", content: summaryPrompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 300
+        },
+        { headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" } }
+      );
+      summaryText = response.data?.choices?.[0]?.message?.content?.trim();
+    }
+    if (!summaryText) {
+      const shortZero = zeroBands.slice(0,5).join(', ') || 'yo\'q';
+      summaryText = `Bugungi ishlab chiqarish natijasi juda real holatda. Barcha bandlar uchun reja 1000 dona, lekin ${belowPlanBands.length} ta band hali rejadan past; ayniqsa ${topBand || 'hech qaysi band'} yuqori natija, ${shortZero} bandlar esa bugun nolni ko'rsatmoqda. Upakovka ${upakovkaToday} va Dazmol ${dazmolToday} dona, ular 10000 lik rejaga yaqin emas. Omborda mavjud ish hajmi ${totalIncoming - totalExpense} dona, bugungi chiqim ${todayExpense} dona. Ehtiyot qismlar soni ${accessoriesCount} ta. Hozirgi vaqtda eng muhim vazifa: 0 ga yoki rejadan past bo'lgan bandlarga diqqatni qaratish.`;
+    }
+
+    res.json({ summary: summaryText, data: { totalToday, topBand, topQty, zeroBands, belowPlanBands, upakovkaToday, dazmolToday, availableWork: totalIncoming - totalExpense, todayExpense, accessoriesCount } });
+  } catch (err) {
+    console.error("AI summary error:", err.message || err);
+    res.status(500).json({ error: "Xulosa olishda xatolik yuz berdi." });
+  }
 });
 
 // -------------------- Cron Jobs --------------------
