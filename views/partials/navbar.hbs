@@ -92,6 +92,14 @@
         .telegram-toast.hide-toast {
             animation: toast-fade-out 0.3s ease forwards;
         }
+
+        @media (max-width: 640px) {
+            nav { padding: 0.5rem 1rem; }
+            .navbar { padding: 0.5rem 1rem; }
+            #sidebarContent { width: 100%; padding: 1rem; }
+            .sidebar-link { padding: 1rem; font-size: 1rem; }
+            .nav-btn-desktop { padding: 0.5rem 1rem; font-size: 0.75rem; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -157,7 +165,7 @@
 <div id="mobileSidebar" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm hidden-sidebar transition-all duration-300">
     <div class="absolute inset-0" onclick="toggleMenu(false)"></div>
 
-    <div id="sidebarContent" class="absolute right-0 top-0 bottom-0 w-[300px] bg-white shadow-2xl p-6 hidden-content flex flex-col">
+    <div id="sidebarContent" class="absolute right-0 top-0 bottom-0 w-[280px] sm:w-[300px] bg-white shadow-2xl p-6 hidden-content flex flex-col">
         <div class="flex justify-between items-center mb-8">
             <h2 class="font-bold text-xl text-slate-800 tracking-tight">Menyu</h2>
             <button onclick="toggleMenu(false)" class="p-2 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors">
