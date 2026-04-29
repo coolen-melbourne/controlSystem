@@ -18,6 +18,7 @@ const io = socketIo(server);
 const productManagerSchema = new mongoose.Schema({
   productType: { type: String, required: true },
   quantity: { type: Number, required: true },
+  enteredBy: { type: String, required: true }, // Ism qo'shildi
   createdAt: { type: Date, default: Date.now }
 });
 const ProductManager = mongoose.model("ProductManager", productManagerSchema);
@@ -671,7 +672,7 @@ app.post("/api/productmanager", async (req, res) => {
     await item.save();
     // ✅ FIX 3: To'liq va aniq Telegram xabari
     sendTelegramMessage(
-      `✅ Yangi mahsulot qo'shildi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
+      `✅ Yangi mahsulot qo'shildi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n� Kiritgan: <b>${escapeHtml(item.enteredBy)}</b>\n�📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
     ).catch(err => console.warn('TG xato:', err.message));
     res.json(item);
   } catch (err) {
@@ -682,6 +683,11 @@ app.post("/api/productmanager", async (req, res) => {
 
 app.put("/api/productmanager/:id", async (req, res) => {
   const item = await ProductManager.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  if (item) {
+    sendTelegramMessage(
+      `✏️ Mahsulot tahrirlandi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n👤 Kiritgan: <b>${escapeHtml(item.enteredBy)}</b>\n📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
+    ).catch(err => console.warn('TG xato:', err.message));
+  }
   res.json(item);
 });
 

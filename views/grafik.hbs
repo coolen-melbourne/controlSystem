@@ -115,19 +115,23 @@
 
     <div id="mainChartCard" class="chart-card p-4 sm:p-6 mb-8 relative">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-4">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
           <h2 class="text-lg font-bold text-gray-800">📊 Kunlik ishlar</h2>
           <div id="dailyTotalBadge" class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">Bugungi jami: 0 dona</div>
         </div>
-        <button id="noteBtn" class="bg-yellow-100 hover:bg-yellow-200 p-2 rounded-full transition mr-2" title="Eslatma">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-        </button>
-        <button id="aiSummaryBtn" class="bg-indigo-100 hover:bg-indigo-200 p-2 rounded-full transition mr-2" title="AI xulosasi">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14h-2v-2h2v2zm0-4h-2V6h2v6z"/></svg>
-        </button>
-        <button id="fullscreenMainBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition" title="Fullscreen">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-        </button>
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="flex items-center gap-2 text-sm text-gray-600"><span>Sana:</span><input id="graphDateFilter" type="date" class="border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" /></label>
+          <button id="dateResetBtn" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-xl text-sm">Bugun</button>
+          <button id="noteBtn" class="bg-yellow-100 hover:bg-yellow-200 p-2 rounded-full transition" title="Eslatma">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          </button>
+          <button id="aiSummaryBtn" class="bg-indigo-100 hover:bg-indigo-200 p-2 rounded-full transition" title="AI xulosasi">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14h-2v-2h2v2zm0-4h-2V6h2v6z"/></svg>
+          </button>
+          <button id="fullscreenMainBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition" title="Fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+          </button>
+        </div>
       </div>
       <canvas id="quantityChart" width="1000" height="500" style="width:100%; height:auto;"></canvas>
       <div id="summaryCard" class="hidden bg-white border border-indigo-100 rounded-2xl p-4 mt-4 text-sm text-gray-700 shadow-sm">
@@ -235,14 +239,22 @@
       }
     }
 
+    let selectedDateKey = getTodayKey();
+
     function getTodayKey() {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    function getDailyTotals(products) {
+    function getSelectedDateKey() {
+      const input = document.getElementById('graphDateFilter');
+      if (input && input.value) return input.value;
+      return selectedDateKey;
+    }
+
+    function getDailyTotals(products, dateKey = getSelectedDateKey()) {
       if (!Array.isArray(products)) return Object.fromEntries(ALL_TYPES.map(t => [t, 0]));
-      const today = getTodayKey();
+      const targetDate = dateKey || getTodayKey();
       const sums = Object.fromEntries(ALL_TYPES.map(t => [t, 0]));
       const seen = new Set();
       products.forEach(p => {
@@ -250,7 +262,7 @@
           if (!p || !p.createdAt || !p.productType || p.quantity === undefined) return;
           const date = new Date(p.createdAt).toISOString().split('T')[0];
           const key = `${p._id||p.id}:${date}`;
-          if (date === today && sums.hasOwnProperty(p.productType) && !seen.has(key)) {
+          if (date === targetDate && sums.hasOwnProperty(p.productType) && !seen.has(key)) {
             seen.add(key);
             sums[p.productType] += parseInt(p.quantity) || 0;
           }
@@ -423,8 +435,16 @@
       setTimeout(() => { toast.classList.remove('show'); toast.classList.add('hide'); setTimeout(() => toast.remove(), 300); }, duration);
     }
 
+    let currentTTS = null;
+    let ttsPlaying = false;
+
     async function playTextWithTTS(text) {
       try {
+        if (currentTTS) {
+          currentTTS.pause();
+          currentTTS.currentTime = 0;
+          currentTTS = null;
+        }
         const res = await fetch('/api/tts-google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -434,16 +454,33 @@
         const blob = await res.blob();
         const audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
+        currentTTS = audio;
+        ttsPlaying = true;
         audio.play().catch(err => console.warn('TTS play error:', err));
+        audio.onended = () => {
+          ttsPlaying = false;
+          currentTTS = null;
+        };
+        audio.onerror = () => {
+          ttsPlaying = false;
+          currentTTS = null;
+        };
       } catch (err) {
         console.error('TTS request error:', err);
+        ttsPlaying = false;
+        currentTTS = null;
       }
     }
 
     async function requestAISummary() {
       const summaryCard = document.getElementById('summaryCard');
       const summaryTextEl = document.getElementById('summaryText');
+      const button = document.getElementById('aiSummaryBtn');
       if (!summaryCard || !summaryTextEl) return;
+      if (button) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+      }
       summaryCard.classList.remove('hidden');
       summaryTextEl.innerText = 'AI xulosasi tayyorlanmoqda...';
       try {
@@ -453,11 +490,16 @@
         const summary = result.summary || 'AI xulosasi topilmadi.';
         summaryTextEl.innerText = summary;
         showToast('AI xulosasi tayyor. Alisa o‘qiydi...', 8000);
-        playTextWithTTS(summary);
+        await playTextWithTTS(summary);
       } catch (err) {
         console.error('AI summary error:', err);
         summaryTextEl.innerText = 'AI xulosasi olinmadi. Keyinroq qayta urinib ko‘ring.';
         showToast('AI xulosasi xatolik bilan tugadi.', 8000);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
       }
     }
 
@@ -524,8 +566,8 @@
       };
     }
 
-    function renderMainChart(products) {
-      const dailyTotals = getDailyTotals(products);
+    function renderMainChart(products, dateKey = getSelectedDateKey()) {
+      const dailyTotals = getDailyTotals(products, dateKey);
       const labels = BAND_TYPES.slice(0,17).concat(['Upakovka','Dazmol']);
       const data = labels.map(t => {
         const val = dailyTotals[t] || 0;
@@ -536,7 +578,10 @@
       const noDataDiv = document.getElementById('noDataMessage');
       const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type]||0), 0);
       const badge = document.getElementById('dailyTotalBadge');
-      if (badge) badge.innerText = `Bugungi jami: ${dailyTotal} dona`;
+      if (badge) {
+        const label = dateKey === getTodayKey() ? 'Bugungi jami' : `${dateKey} jami`;
+        badge.innerText = `${label}: ${dailyTotal} dona`;
+      }
       if (!ctx) return;
 
       // ✅ FIX 2: Har doim destroy qilib qayta yaratish — canvas check muammosi yo'q
@@ -848,9 +893,10 @@
 
     async function refreshAll() {
       try {
+        const dateKey = getSelectedDateKey();
         const {products,incoming,expenses,staff,attendance,machines,accessories}=await fetchAllData();
         const totalAll=products.filter(p=>BAND_TYPES.includes(p.productType)).reduce((s,p)=>s+p.quantity,0);
-        const dailyTotals=getDailyTotals(products);
+        const dailyTotals=getDailyTotals(products, dateKey);
         const dailyTotal=BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
 
         const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.innerText=val;};
@@ -873,7 +919,7 @@
         setEl('dailyExpenseStat',todayExpense);
         setEl('accessoriesCountStat',accessories.length);
 
-        renderMainChart(products);
+        renderMainChart(products, dateKey);
         renderYearlyChart(products);
         const last30=aggregateLast30Days(products);
         renderBandBarChart(last30);
@@ -922,6 +968,21 @@
       bindFullscreenButtons();
       setInterval(refreshAll,30000);
 
+      const dateInput = document.getElementById('graphDateFilter');
+      if (dateInput) {
+        dateInput.value = getTodayKey();
+        dateInput.addEventListener('change', () => {
+          if (!dateInput.value) dateInput.value = getTodayKey();
+          refreshAll();
+        });
+      }
+      document.getElementById('dateResetBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('graphDateFilter');
+        if (input) {
+          input.value = getTodayKey();
+          refreshAll();
+        }
+      });
       document.getElementById('availableWorkRow')?.addEventListener('click',showIncomingModal);
       document.getElementById('dailyExpenseRow')?.addEventListener('click',showExpenseModal);
       document.getElementById('accessoriesRow')?.addEventListener('click',showAccessoriesModal);
