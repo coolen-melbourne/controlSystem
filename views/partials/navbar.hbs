@@ -197,12 +197,37 @@
 </div>
 
 <!-- Asosiy Kontent -->
-<main class="pt-24 px-4 max-w-[1440px] mx-auto">
-    <div class="bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
-        <h1 class="text-2xl font-bold text-slate-800">Xush kelibsiz!</h1>
-        <p class="text-gray-500 mt-2">Boshqaruv paneliga xush kelibsiz!</p>
-        <p>created by Makhmudov Husanboy</p>
+<main class="pt-16 sm:pt-24 px-4 max-w-[1440px] mx-auto">
+    
+    <div class="relative overflow-hidden bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300">
+        
+        <!-- subtle gradient glow -->
+        <div class="absolute -top-16 -right-16 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/10 blur-3xl rounded-full"></div>
+
+        <div class="relative">
+            
+            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
+                Xush kelibsiz 👋
+            </h1>
+
+            <p class="text-gray-500 mt-3 text-sm sm:text-base">
+                Boshqaruv paneliga xush kelibsiz!
+            </p>
+
+            <div class="mt-6 flex items-center justify-between flex-wrap gap-3">     
+                <p class="text-xs sm:text-sm text-gray-400">
+                    created by 
+                    <span class="text-slate-600 font-medium hover:text-blue-600 transition cursor-pointer">
+                        @cypsev
+                    </span>
+                </p>
+            </div>
+
+        </div>
+
     </div>
+
 </main>
 
 <script>

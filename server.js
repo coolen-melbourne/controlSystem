@@ -8,9 +8,11 @@ const cron = require("node-cron");
 const moment = require("moment");
 const axios = require("axios");
 const TelegramBot = require("node-telegram-bot-api");
+const compression = require("compression");
 require("dotenv").config();
 
 const app = express();
+app.use(compression());
 const server = http.createServer(app);
 const io = socketIo(server);
 
@@ -87,6 +89,20 @@ const accessorySchema = new mongoose.Schema({
 });
 const Accessory = mongoose.model("Accessory", accessorySchema);
 
+// Add indexes for performance
+(async () => {
+  try {
+    await ProductManager.collection.createIndex({ createdAt: 1, productType: 1 });
+    await IncomingProduct.collection.createIndex({ date: 1 });
+    await Expense.collection.createIndex({ date: 1 });
+    await Machine.collection.createIndex({ createdAt: 1 });
+    await Accessory.collection.createIndex({ createdAt: 1 });
+    console.log('Indexes created successfully');
+  } catch (err) {
+    console.error('Index creation error:', err);
+  }
+})();
+
 // -------------------- Telegram Bot --------------------
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 let bot;
@@ -105,19 +121,24 @@ const BAND_TYPES = [
   "16-band","17-band","18-band"
 ];
 
-async function getTotalProduction() {
-  const allProducts = await ProductManager.find({ productType: { $in: BAND_TYPES } });
-  return allProducts.reduce((sum, p) => sum + p.quantity, 0);
+async function getTotalProduction(monthKey = null) {
+  const monthStart = monthKey ? moment(monthKey + '-01').startOf('month').toDate() : moment().startOf('month').toDate();
+  const monthEnd = monthKey ? moment(monthKey + '-01').endOf('month').toDate() : moment().endOf('month').toDate();
+  const result = await ProductManager.aggregate([
+    { $match: { productType: { $in: BAND_TYPES }, createdAt: { $gte: monthStart, $lte: monthEnd } } },
+    { $group: { _id: null, total: { $sum: "$quantity" } } }
+  ]);
+  return result[0]?.total || 0;
 }
 
 async function getDailyProduction() {
   const todayStart = moment().startOf('day').toDate();
   const todayEnd = moment().endOf('day').toDate();
-  const todayProducts = await ProductManager.find({
-    productType: { $in: BAND_TYPES },
-    createdAt: { $gte: todayStart, $lte: todayEnd }
-  });
-  return todayProducts.reduce((sum, p) => sum + p.quantity, 0);
+  const result = await ProductManager.aggregate([
+    { $match: { productType: { $in: BAND_TYPES }, createdAt: { $gte: todayStart, $lte: todayEnd } } },
+    { $group: { _id: null, total: { $sum: "$quantity" } } }
+  ]);
+  return result[0]?.total || 0;
 }
 
 // -------------------- Telegram Helper --------------------
@@ -154,16 +175,16 @@ async function getTTSBuffer(text, lang = 'uz') {
 }
 
 async function buildAITextSummary(stats) {
-  const { totalToday, totalOverall, topBand, topQty, upakovkaToday, dazmolToday, availableWork, expenseToday, accessoriesCount, zeroBands, belowPlanBands } = stats;
+  const { totalToday, totalOverall, topBand, topQty, upakovkaMonth, dazmolMonth, availableWork, expenseToday, accessoriesCount, zeroBands, belowPlanBands } = stats;
   const openaiKey = process.env.OPENAI_API_KEY;
-  const prompt = `Siz ombor va tikuv statistikasi bo'yicha eng aniq va amaliy xulosa yozadigan ekspert siz. Foydalanuvchi bugungi bandlar, upakovka va dazmol ishlari, ombor holati va rejaga nisbatan natija haqida tezkor va qisqa xulosa kutmoqda. Xulosani O'zbek tilida, ravon va kuzatuvchan gaplar bilan yozing. 1-18 bandlar uchun reja 1000 dona, Upakovka va Dazmol uchun reja 10000 dona.
+  const prompt = `Siz ombor va tikuv statistikasi bo'yicha eng aniq va amaliy xulosa yozadigan ekspert siz. Foydalanuvchi bugungi bandlar, oy davomidagi upakovka va dazmol ishlari, ombor holati va rejaga nisbatan natija haqida tezkor va qisqa xulosa kutmoqda. Xulosani O'zbek tilida, ravon va kuzatuvchan gaplar bilan yozing. 1-18 bandlar uchun reja 1000 dona, Upakovka va Dazmol uchun reja 10000 dona.
 
 Bugungi ma'lumotlar:
 - Bugungi bandlar jami: ${totalToday} dona
-- Jami tikuv: ${totalOverall} dona
+- Oylik jami tikuv: ${totalOverall} dona
 - Eng ko'p tikkan band: ${topBand} (${topQty} dona)
-- Upakovka: ${upakovkaToday} dona
-- Dazmol: ${dazmolToday} dona
+- Upakovka (oylik): ${upakovkaMonth} dona
+- Dazmol (oylik): ${dazmolMonth} dona
 - Ombordagi mavjud ish: ${availableWork} dona
 - Bugungi chiqim: ${expenseToday} dona
 - Aksessuarlar: ${accessoriesCount} ta
@@ -199,7 +220,7 @@ Faqat xulosa yozing, sarlavha qo'ymang.`;
   }
 
   const zeroText = zeroBands.length ? zeroBands.join(', ') : 'yo`q';
-  return `Bugungi ishlab chiqarishdagi eng muhim xulosalar: bandlar bo'yicha umumiy ish ${totalToday} dona, ammo ${belowPlanBands.length} ta band hali rejadan past va ${zeroBands.length} tasi to'liq nolga tushgan (${zeroText}). Upakovka ${upakovkaToday} dona, Dazmol ${dazmolToday} dona, ular 10000 lik rejaga nisbatan orqada. Ombordagi ish hajmi ${availableWork} dona, bugungi chiqim ${expenseToday} dona. Hozirda eng katta diqqatni faqat past ko'rsatkichli bandlar va tezroq qayta tiklashga qaratish kerak.`;
+  return `Bugungi ishlab chiqarishdagi eng muhim xulosalar: bandlar bo'yicha umumiy ish ${totalToday} dona, ammo ${belowPlanBands.length} ta band hali rejadan past va ${zeroBands.length} tasi to'liq nolga tushgan (${zeroText}). Upakovka ${upakovkaMonth} dona, Dazmol ${dazmolMonth} dona, ular 10000 lik rejaga nisbatan orqada. Ombordagi ish hajmi ${availableWork} dona, bugungi chiqim ${expenseToday} dona. Hozirda eng katta diqqatni faqat past ko'rsatkichli bandlar va tezroq qayta tiklashga qaratish kerak.`;
 }
 
 // -------------------- Band qo'shish uchun state --------------------
@@ -344,23 +365,35 @@ async function sendBandSelectionKeyboard(chatId) {
 // -------------------- Bot funksiyalari --------------------
 async function sendFullStatsToChat(chatId) {
   try {
+    const monthStart = moment().startOf('month').toDate();
+    const monthEnd = moment().endOf('month').toDate();
     const todayStart = moment().startOf('day').toDate();
     const todayEnd = moment().endOf('day').toDate();
     const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
+    const monthProducts = await ProductManager.find({
+      productType: { $in: BAND_TYPES },
+      createdAt: { $gte: monthStart, $lte: monthEnd }
+    });
     const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
     const totalOverall = await getTotalProduction();
     const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
+    const monthlyBandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
     allProducts.forEach(p => {
       if (BAND_TYPES.includes(p.productType)) {
         bandStats[p.productType] += p.quantity;
       }
     });
+    monthProducts.forEach(p => {
+      if (BAND_TYPES.includes(p.productType)) {
+        monthlyBandStats[p.productType] += p.quantity;
+      }
+    });
     let topBand = '—', topQty = 0;
-    for (const [band, qty] of Object.entries(bandStats)) {
+    for (const [band, qty] of Object.entries(monthlyBandStats)) {
       if (qty > topQty) { topBand = band; topQty = qty; }
     }
-    const upakovkaToday = allProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
-    const dazmolToday = allProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
+    const upakovkaMonth = monthProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
+    const dazmolMonth = monthProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
     const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
     const totalExpense = (await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
     const expenseToday = (await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
@@ -372,23 +405,23 @@ async function sendFullStatsToChat(chatId) {
     const accessoriesCount = await Accessory.countDocuments();
 
     const bandLines = BAND_TYPES.map(band => {
-      const qty = bandStats[band] || 0;
+      const qty = monthlyBandStats[band] || 0;
       const pct = Math.min(100, Math.round((qty / 1000) * 100));
       const icon = pct >= 80 ? '🟢' : pct >= 50 ? '🟡' : '🔴';
       return `• ${icon} ${band}: <code>${qty}/1000</code> (${pct}%)`;
     }).join('\n');
-    const zeroBands = BAND_TYPES.filter(band => (bandStats[band] || 0) === 0);
-    const belowPlanBands = BAND_TYPES.filter(band => (bandStats[band] || 0) < 1000);
+    const zeroBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) < 1000);
 
     const statsMessage = `
 📊 <b>📅 Statistika – ${moment().format("DD.MM.YYYY, HH:mm")}</b>
 
 🔹 <b>Ishlab chiqarish</b>
 • 📅 <b>Kunlik tikuv</b>: <code>${totalToday}</code> dona
-• 📊 <b>Jami tikuv</b>: <code>${totalOverall}</code> dona
+• �️ <b>Oylik jami tikuv</b>: <code>${totalOverall}</code> dona
 • 🏆 Eng ko'p tikkan band: <b>${topBand}</b> (${topQty} dona)
-• 🔥 Dazmol: ${dazmolToday} dona
-• 📦 Upakovka: ${upakovkaToday} dona
+• 🔥 Dazmol (oylik): ${dazmolMonth} dona
+• 📦 Upakovka (oylik): ${upakovkaMonth} dona
 
 📊 <b>Bandlar bo'yicha jarayon</b>
 ${bandLines}
@@ -413,8 +446,8 @@ ${bandLines}
       totalOverall,
       topBand,
       topQty,
-      upakovkaToday,
-      dazmolToday,
+      upakovkaMonth,
+      dazmolMonth,
       availableWork: totalIncoming - totalExpense,
       expenseToday,
       accessoriesCount,
@@ -438,37 +471,49 @@ ${bandLines}
 
 async function sendAISummaryOnly(chatId) {
   try {
+    const monthStart = moment().startOf('month').toDate();
+    const monthEnd = moment().endOf('month').toDate();
     const todayStart = moment().startOf('day').toDate();
     const todayEnd = moment().endOf('day').toDate();
     const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
+    const monthProducts = await ProductManager.find({
+      productType: { $in: BAND_TYPES },
+      createdAt: { $gte: monthStart, $lte: monthEnd }
+    });
     const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
     const totalOverall = await getTotalProduction();
     const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
+    const monthlyBandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
     allProducts.forEach(p => {
       if (BAND_TYPES.includes(p.productType)) {
         bandStats[p.productType] += p.quantity;
       }
     });
+    monthProducts.forEach(p => {
+      if (BAND_TYPES.includes(p.productType)) {
+        monthlyBandStats[p.productType] += p.quantity;
+      }
+    });
     let topBand = '—', topQty = 0;
-    for (const [band, qty] of Object.entries(bandStats)) {
+    for (const [band, qty] of Object.entries(monthlyBandStats)) {
       if (qty > topQty) { topBand = band; topQty = qty; }
     }
-    const upakovkaToday = allProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
-    const dazmolToday = allProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
+    const upakovkaMonth = monthProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
+    const dazmolMonth = monthProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
     const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
     const totalExpense = (await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
     const expenseToday = (await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
     const accessoriesCount = await Accessory.countDocuments();
-    const zeroBands = BAND_TYPES.filter(band => (bandStats[band] || 0) === 0);
-    const belowPlanBands = BAND_TYPES.filter(band => (bandStats[band] || 0) < 1000);
+    const zeroBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) < 1000);
 
     const summaryText = await buildAITextSummary({
       totalToday,
       totalOverall,
       topBand,
       topQty,
-      upakovkaToday,
-      dazmolToday,
+      upakovkaMonth,
+      dazmolMonth,
       availableWork: totalIncoming - totalExpense,
       expenseToday,
       accessoriesCount,
@@ -494,7 +539,7 @@ async function sendDailyTotalStats(chatId) {
   try {
     const daily = await getDailyProduction();
     const total = await getTotalProduction();
-    await sendTelegramMessage(`📈 <b>Kunlik va Jami tikuv</b>\n\n📅 <b>Kunlik:</b> <code>${daily}</code> dona\n📊 <b>Jami:</b> <code>${total}</code> dona`, chatId);
+    await sendTelegramMessage(`📈 <b>Kunlik va Oylik tikuv</b>\n\n📅 <b>Kunlik:</b> <code>${daily}</code> dona\n📊 <b>Oylik:</b> <code>${total}</code> dona`, chatId);
   } catch (err) {
     await sendTelegramMessage("❌ Maʼlumot yuklanmadi.", chatId);
   }
@@ -903,24 +948,34 @@ app.get("/api/stats/today", async (req, res) => {
 
 app.get("/api/ai-summary", async (req, res) => {
   try {
-    const todayStart = moment().startOf("day").toDate();
-    const todayEnd = moment().endOf("day").toDate();
+    const monthStart = moment().startOf('month').toDate();
+    const monthEnd = moment().endOf('month').toDate();
+    const todayStart = moment().startOf('day').toDate();
+    const todayEnd = moment().endOf('day').toDate();
     const bandTotals = await ProductManager.aggregate([
       { $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: { $in: BAND_TYPES } } },
       { $group: { _id: "$productType", total: { $sum: "$quantity" } } }
     ]);
     const bandTotalsObj = Object.fromEntries(bandTotals.map(b => [b._id, b.total]));
+    const monthBandTotals = await ProductManager.aggregate([
+      { $match: { createdAt: { $gte: monthStart, $lte: monthEnd }, productType: { $in: BAND_TYPES } } },
+      { $group: { _id: "$productType", total: { $sum: "$quantity" } } }
+    ]);
+    const monthBandTotalsObj = Object.fromEntries(monthBandTotals.map(b => [b._id, b.total]));
     const upakovkaToday = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: "Upakovka" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
     const dazmolToday = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: todayStart, $lte: todayEnd }, productType: "Dazmol" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const upakovkaMonth = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: monthStart, $lte: monthEnd }, productType: "Upakovka" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
+    const dazmolMonth = (await ProductManager.aggregate([{ $match: { createdAt: { $gte: monthStart, $lte: monthEnd }, productType: "Dazmol" } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
     const totalIncoming = (await IncomingProduct.aggregate([{ $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
     const totalExpense = (await Expense.aggregate([{ $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
     const todayExpense = (await Expense.aggregate([{ $match: { date: { $gte: todayStart, $lte: todayEnd } } }, { $group: { _id: null, total: { $sum: "$quantity" } } }]))[0]?.total || 0;
     const accessoriesCount = await Accessory.countDocuments();
     const totalToday = BAND_TYPES.reduce((sum, band) => sum + (bandTotalsObj[band] || 0), 0);
-    const zeroBands = BAND_TYPES.filter(band => (bandTotalsObj[band] || 0) === 0);
-    const belowPlanBands = BAND_TYPES.filter(band => (bandTotalsObj[band] || 0) < 1000);
+    const totalOverall = await getTotalProduction();
+    const zeroBands = BAND_TYPES.filter(band => (monthBandTotalsObj[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (monthBandTotalsObj[band] || 0) < 1000);
     let topBand = null; let topQty = 0;
-    for (const [band, qty] of Object.entries(bandTotalsObj)) {
+    for (const [band, qty] of Object.entries(monthBandTotalsObj)) {
       if (qty > topQty) { topQty = qty; topBand = band; }
     }
 
@@ -929,12 +984,13 @@ app.get("/api/ai-summary", async (req, res) => {
 - Upakovka va Dazmol: har biri 10000 dona
 
 Bugungi ma'lumot:
-- Umumiy bandlar: ${totalToday} dona
-- Top band: ${topBand || 'yo`q'} (${topQty} dona)
+- Bugungi bandlar: ${totalToday} dona
+- Oylik jami tikuv: ${totalOverall} dona
+- Top band (oylik): ${topBand || 'yo`q'} (${topQty} dona)
 - Nolinchi bandlar: ${zeroBands.length} ta (${zeroBands.slice(0,5).join(', ') || 'yo`q'})
 - 1000 dan kam bajarilgan bandlar: ${belowPlanBands.length} ta
-- Upakovka: ${upakovkaToday} dona
-- Dazmol: ${dazmolToday} dona
+- Upakovka (oylik): ${upakovkaMonth} dona
+- Dazmol (oylik): ${dazmolMonth} dona
 - Ombordagi mavjud ish: ${totalIncoming - totalExpense} dona
 - Bugungi chiqim: ${todayExpense} dona
 - Aksessuarlar soni: ${accessoriesCount}
@@ -961,10 +1017,10 @@ Faqat qattiq va amaliy xulosani O'zbek tilida yozing. Sarlavha qo'ymang, qisqa p
     }
     if (!summaryText) {
       const shortZero = zeroBands.slice(0,5).join(', ') || 'yo\'q';
-      summaryText = `Bugungi ishlab chiqarish natijasi juda real holatda. Barcha bandlar uchun reja 1000 dona, lekin ${belowPlanBands.length} ta band hali rejadan past; ayniqsa ${topBand || 'hech qaysi band'} yuqori natija, ${shortZero} bandlar esa bugun nolni ko'rsatmoqda. Upakovka ${upakovkaToday} va Dazmol ${dazmolToday} dona, ular 10000 lik rejaga yaqin emas. Omborda mavjud ish hajmi ${totalIncoming - totalExpense} dona, bugungi chiqim ${todayExpense} dona. Ehtiyot qismlar soni ${accessoriesCount} ta. Hozirgi vaqtda eng muhim vazifa: 0 ga yoki rejadan past bo'lgan bandlarga diqqatni qaratish.`;
+      summaryText = `Bugungi ishlab chiqarish natijasi juda real holatda. Barcha bandlar uchun reja 1000 dona, lekin ${belowPlanBands.length} ta band hali rejadan past; ayniqsa ${topBand || 'hech qaysi band'} yuqori natija, ${shortZero} bandlar esa bugun nolni ko'rsatmoqda. Upakovka ${upakovkaMonth} va Dazmol ${dazmolMonth} dona, ular 10000 lik rejaga yaqin emas. Omborda mavjud ish hajmi ${totalIncoming - totalExpense} dona, bugungi chiqim ${todayExpense} dona. Ehtiyot qismlar soni ${accessoriesCount} ta. Hozirgi vaqtda eng muhim vazifa: 0 ga yoki rejadan past bo'lgan bandlarga diqqatni qaratish.`;
     }
 
-    res.json({ summary: summaryText, data: { totalToday, topBand, topQty, zeroBands, belowPlanBands, upakovkaToday, dazmolToday, availableWork: totalIncoming - totalExpense, todayExpense, accessoriesCount } });
+    res.json({ summary: summaryText, data: { totalToday, topBand, topQty, zeroBands, belowPlanBands, upakovkaMonth, dazmolMonth, availableWork: totalIncoming - totalExpense, todayExpense, accessoriesCount } });
   } catch (err) {
     console.error("AI summary error:", err.message || err);
     res.status(500).json({ error: "Xulosa olishda xatolik yuz berdi." });

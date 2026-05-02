@@ -77,6 +77,40 @@
     .loading-spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #dc2626; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .loading-text { font-size: 24px; font-weight: bold; color: #dc2626; }
+
+    /* 🌊 Wave Animations */
+    @keyframes wave1 { 0% { transform: translateX(0); } 100% { transform: translateX(100%); } }
+    @keyframes wave2 { 0% { transform: translateX(-100%); } 100% { transform: translateX(0); } }
+    @keyframes wave3 { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+    
+    .wave-container { position: relative; width: 100%; height: 120px; margin: 1.5rem 0; overflow: hidden; }
+    .wave-container svg { position: absolute; width: 200%; height: 100%; }
+    .wave-svg-1 { animation: wave1 15s linear infinite; opacity: 0.7; }
+    .wave-svg-2 { animation: wave2 10s linear infinite; opacity: 0.5; }
+    .wave-svg-3 { animation: wave3 20s linear infinite; opacity: 0.3; }
+    
+    @media (max-width: 640px) { .wave-container { height: 80px; } }
+
+    /* Decorative wave at chart card top */
+    .chart-card::before { 
+      content: ''; 
+      position: absolute; 
+      top: -20px; 
+      left: 0; 
+      right: 0; 
+      height: 20px; 
+      background: radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), 
+                  radial-gradient(circle at 80% 80%, #8b5cf6 0%, transparent 50%);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 0;
+      animation: wave-shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes wave-shimmer {
+      0%, 100% { opacity: 0.3; transform: translateY(0); }
+      50% { opacity: 0.8; transform: translateY(-5px); }
+    }
+
   </style>
 </head>
 <body class="antialiased">
@@ -91,7 +125,7 @@
     <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div class="stats-card p-4 flex items-center gap-3 shadow-sm">
         <div class="bg-blue-100 p-3 rounded-full"><span class="text-2xl">📊</span></div>
-        <div><p class="text-xs text-gray-500 uppercase tracking-wide">Jami tikuv</p><div class="space-y-1"><p class="text-2xl font-bold text-gray-800"><span id="dailySumStat" class="text-blue-600">0</span> / <span id="totalSumStat">0</span></p><p class="text-xs text-gray-400">📅 Kunlik / 📊 Jami</p></div></div>
+        <div><p class="text-xs text-gray-500 uppercase tracking-wide">Jami tikuv</p><div class="space-y-1"><p class="text-2xl font-bold text-gray-800"><span id="dailySumStat" class="text-blue-600">0</span> / <span id="totalSumStat">0</span></p><p class="text-xs text-gray-400">📅 Kunlik / �️ Oylik</p></div></div>
       </div>
       <div class="stats-card p-4 flex items-start gap-3 shadow-sm">
         <div class="bg-purple-100 p-3 rounded-full"><span class="text-2xl">🏆</span></div>
@@ -116,6 +150,37 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- 🌊 Wave Animation Section -->
+    <div class="wave-container">
+      <svg class="wave-svg-1" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,50 Q300,10 600,50 T1200,50 L1200,100 L0,100 Z" fill="url(#waveGradient1)" />
+        <defs>
+          <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.8" />
+            <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:0.2" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg class="wave-svg-2" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,60 Q300,30 600,60 T1200,60 L1200,100 L0,100 Z" fill="url(#waveGradient2)" />
+        <defs>
+          <linearGradient id="waveGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.6" />
+            <stop offset="100%" style="stop-color:#5b21b6;stop-opacity:0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg class="wave-svg-3" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,70 Q300,40 600,70 T1200,70 L1200,100 L0,100 Z" fill="url(#waveGradient3)" />
+        <defs>
+          <linearGradient id="waveGradient3" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#ec4899;stop-opacity:0.5" />
+            <stop offset="100%" style="stop-color:#be185d;stop-opacity:0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
 
     <div id="mainChartCard" class="chart-card p-4 sm:p-6 mb-8 relative">
@@ -161,14 +226,36 @@
       <div class="mt-3 text-xs text-gray-400 text-center">📅 So'nggi 12 kalendar oy davomida qo'shilgan jami miqdorlar.</div>
     </div>
 
+    <!-- 🌊 Wave Animation Between Sections -->
+    <div class="wave-container">
+      <svg class="wave-svg-2" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,30 Q300,60 600,30 T1200,30 L1200,0 L0,0 Z" fill="url(#waveGradient4)" />
+        <defs>
+          <linearGradient id="waveGradient4" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.3" />
+            <stop offset="100%" style="stop-color:#0891b2;stop-opacity:0.7" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <svg class="wave-svg-1" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,40 Q300,10 600,40 T1200,40 L1200,0 L0,0 Z" fill="url(#waveGradient5)" />
+        <defs>
+          <linearGradient id="waveGradient5" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:0.4" />
+            <stop offset="100%" style="stop-color:#0d9488;stop-opacity:0.6" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
     <div class="ranking-card p-5 shadow-sm mb-6">
-      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo'yicha tikilgan ishlar statistikasi (30 kunlik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
-      <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 30 kunlik tikuv miqdori – grafik ko'rinish</div></div>
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo'yicha tikilgan ishlar statistikasi (oylik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
+      <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 Oylik tikuv miqdori – grafik ko'rinish</div></div>
       <div id="rankingContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
 
     <div class="ranking-card p-5 shadow-sm mb-6">
-      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📦 Upakovka & Dazmol statistikasi <span class="text-sm font-normal text-gray-500">(barcha vaqt va oxirgi 30 kun)</span></h2>
+      <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📦 Upakovka & Dazmol statistikasi <span class="text-sm font-normal text-gray-500">(oylik)</span></h2>
       <div id="extraStatsContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
 
@@ -176,6 +263,20 @@
       <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📅 Oylik kirim va chiqim (so'nggi 12 oy)</h2>
       <div id="monthlyTableContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
+
+    <!-- 🌊 Final Wave Animation -->
+    <div class="wave-container">
+      <svg class="wave-svg-3" viewBox="0 0 1200 100" preserveAspectRatio="none">
+        <path d="M0,50 Q300,20 600,50 T1200,50 L1200,100 L0,100 Z" fill="url(#waveGradient6)" />
+        <defs>
+          <linearGradient id="waveGradient6" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0.6" />
+            <stop offset="100%" style="stop-color:#d97706;stop-opacity:0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
     <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌 Grafiklar yuqori o'ng burchakdagi ⛶ tugmasi bilan to'liq ekranga kengaytiriladi. Esc tugmasi bilan chiqiladi.</div>
   </div>
 
@@ -278,6 +379,26 @@
       return sums;
     }
 
+    function getMonthlyTotals(products, monthKey = null) {
+      if (!Array.isArray(products)) return 0;
+      const targetMonth = monthKey || getTodayKey().slice(0,7);
+      const seen = new Set();
+      return products.reduce((total, p) => {
+        try {
+          if (!p || !p.createdAt || p.quantity === undefined) return total;
+          const pDate = new Date(p.createdAt);
+          if (isNaN(pDate.getTime())) return total;
+          const key = `${p._id||p.id}`;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
+          if (pMonth === targetMonth && BAND_TYPES.includes(p.productType) && !seen.has(key)) {
+            seen.add(key);
+            return total + (parseInt(p.quantity) || 0);
+          }
+        } catch(e) {}
+        return total;
+      }, 0);
+    }
+
     function getColorAndEmoji(type, qty) {
       const plan = type.includes('band') ? 1000 : 10000;
       const ratio = qty / plan;
@@ -361,6 +482,49 @@
         } catch(e) {}
       });
       return { months, totals };
+    }
+
+    function getCurrentMonthBandTotals(products, monthKey = null) {
+      if (!Array.isArray(products)) return Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
+      const targetMonth = monthKey || getTodayKey().slice(0,7);
+      const sums = Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
+      const seen = new Set();
+      products.forEach(p => {
+        try {
+          if (!p || !p.createdAt || !p.productType || p.quantity === undefined) return;
+          const pDate = new Date(p.createdAt);
+          if (isNaN(pDate.getTime())) return;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
+          const key = `${p._id||p.id}`;
+          if (pMonth === targetMonth && sums.hasOwnProperty(p.productType) && !seen.has(key)) {
+            seen.add(key);
+            sums[p.productType] += parseInt(p.quantity) || 0;
+          }
+        } catch(e) {}
+      });
+      return sums;
+    }
+
+    function getCurrentMonthExtraStats(products, monthKey = null) {
+      if (!Array.isArray(products)) return { upakovkaAll:0, dazmolAll:0 };
+      const targetMonth = monthKey || getTodayKey().slice(0,7);
+      let ua = 0, da = 0;
+      const seen = new Set();
+      products.forEach(p => {
+        try {
+          if (!p || !p.createdAt || p.quantity === undefined || !p.productType) return;
+          const pDate = new Date(p.createdAt);
+          if (isNaN(pDate.getTime())) return;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
+          const key = `${p._id||p.id}`;
+          if (pMonth !== targetMonth || seen.has(key)) return;
+          seen.add(key);
+          const qty = parseInt(p.quantity) || 0;
+          if (p.productType === 'Upakovka') ua += qty;
+          if (p.productType === 'Dazmol') da += qty;
+        } catch(e) {}
+      });
+      return { upakovkaAll: ua, dazmolAll: da };
     }
 
     function computeWarehouseStats(incoming, expenses) {
@@ -567,7 +731,7 @@
             y: { beginAtZero: true, title: { display:true, text:'Kunlik tikuv (dona)' }, grid: { color:'#e2e8f0' }, ticks: { font: { size:10 } } },
             x: { title: { display:true, text:'Mahsulot turi' }, ticks: { maxRotation:0, minRotation:0, autoSkip:false, font: { size:10 } }, grid: { display:false } }
           },
-          animation: { duration:1200, easing:'easeOutElastic' }
+          animation: false
         },
         plugins: [ChartDataLabels]
       };
@@ -650,7 +814,7 @@
             y: { beginAtZero:true, title:{ display:true, text:'Miqdor (dona)' } },
             x: { ticks:{ maxRotation:45, minRotation:45, font:{ size:10 } }, grid:{ display:false } }
           },
-          animation: { duration:1000 }
+          animation: false
         },
         plugins: [ChartDataLabels]
       };
@@ -676,42 +840,42 @@
       yearlyChart = new Chart(ctx, buildYearlyChartConfig(monthLabels, months.map(m => totals[m]||0)));
     }
 
-    function renderBandBarChart(last30Sums) {
+    function renderBandBarChart(monthlySums) {
       const ctx = document.getElementById('bandBarChart')?.getContext('2d');
       if (!ctx) return;
       const labels = BAND_TYPES;
-      const data = labels.map(b => last30Sums[b]||0);
+      const data = labels.map(b => monthlySums[b]||0);
       if (bandBarChart) { bandBarChart.destroy(); bandBarChart = null; }
       if (data.reduce((a,b)=>a+b,0) === 0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
       bandBarChart = new Chart(ctx, {
         type:'bar',
-        data: { labels, datasets:[{ label:'30 kunlik tikuv (dona)', data, backgroundColor:'rgba(59,130,246,0.7)', borderColor:'rgb(59,130,246)', borderWidth:1, borderRadius:8, barPercentage:0.8, categoryPercentage:0.9 }] },
+        data: { labels, datasets:[{ label:'Oylik tikuv (dona)', data, backgroundColor:'rgba(59,130,246,0.7)', borderColor:'rgb(59,130,246)', borderWidth:1, borderRadius:8, barPercentage:0.8, categoryPercentage:0.9 }] },
         options: {
           responsive:true, maintainAspectRatio:true,
           plugins: { tooltip:{ callbacks:{ label:ctx=>`${ctx.raw} dona` } }, legend:{position:'top'}, datalabels:{ anchor:'end', align:'top', offset:6, backgroundColor:'rgba(0,0,0,0.6)', borderRadius:12, padding:{top:2,bottom:2,left:6,right:6}, color:'white', font:{weight:'bold',size:11}, formatter:value=>value>0?value:'' } },
           scales: { y:{beginAtZero:true,title:{display:true,text:'Miqdor (dona)'}}, x:{ticks:{maxRotation:45,minRotation:45,font:{size:10}},grid:{display:false}} },
-          animation:{duration:1000}
+          animation: false
         },
         plugins:[ChartDataLabels]
       });
     }
 
-    function renderRanking(last30Sums) {
+    function renderRanking(monthlySums) {
       const container = document.getElementById('rankingContainer');
       if (!container) return;
-      const entries = BAND_TYPES.map(t => [t, last30Sums[t]||0]).sort((a,b)=>b[1]-a[1]);
+      const entries = BAND_TYPES.map(t => [t, monthlySums[t]||0]).sort((a,b)=>b[1]-a[1]);
       const totalLast = entries.reduce((s,[,v])=>s+v,0);
-      if (!totalLast) { container.innerHTML='<div class="text-center py-6 text-gray-400">📭 30 kun ichida maʼlumot yo\'q.</div>'; return; }
-      let html='<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">30 kunlik</th></tr></thead><tbody>';
+      if (!totalLast) { container.innerHTML='<div class="text-center py-6 text-gray-400">📭 Oylik maʼlumot yo\'q.</div>'; return; }
+      let html='<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Oylik</th></tr></thead><tbody>';
       entries.forEach(([type,qty],idx)=>{ html+=`<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm text-gray-500">${idx+1}</td><td class="py-3 px-3 text-sm font-semibold">${type}</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${qty}</td></tr>`; });
       html+=`</tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td colspan="2" class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${totalLast}</td></tr></tfoot></table>`;
       container.innerHTML=html;
     }
 
-    function renderExtraStats(ua,u30,da,d30) {
+    function renderExtraStats(ua,da) {
       const c=document.getElementById('extraStatsContainer');
       if (!c) return;
-      c.innerHTML=`<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">Mahsulot turi</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Jami</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">30 kunlik</th></tr></thead><tbody><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">📦 Upakovka</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${ua}</td><td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${u30}</td></tr><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">🔥 Dazmol</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${da}</td><td class="py-3 px-3 text-sm font-bold text-emerald-600 text-right">${d30}</td></tr></tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${ua+da}</td><td class="py-3 px-3 text-sm font-bold text-emerald-700 text-right">${u30+d30}</td></tr></tfoot></table>`;
+      c.innerHTML=`<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">Mahsulot turi</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Oylik</th></tr></thead><tbody><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">📦 Upakovka</td><td class="py-2 px-3 text-sm font-bold text-indigo-600 text-right">${ua}</td></tr><tr class="border-b border-gray-100"><td class="py-3 px-3 text-sm font-semibold">🔥 Dazmol</td><td class="py-2 px-3 text-sm font-bold text-indigo-600 text-right">${da}</td></tr></tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${ua+da}</td></tr></tfoot></table>`;
     }
 
     function renderMonthlyTable(incoming, expenses) {
@@ -902,21 +1066,21 @@
       try {
         const dateKey = getSelectedDateKey();
         const {products,incoming,expenses,staff,attendance,machines,accessories}=await fetchAllData();
-        const totalAll=products.filter(p=>BAND_TYPES.includes(p.productType)).reduce((s,p)=>s+p.quantity,0);
-        const dailyTotals=getDailyTotals(products, dateKey);
-        const dailyTotal=BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
+      const monthKey = dateKey ? dateKey.slice(0,7) : getTodayKey().slice(0,7);
+      const monthlyTotal = getMonthlyTotals(products, monthKey);
+      const dailyTotals=getDailyTotals(products, dateKey);
+      const dailyTotal=BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
+      const monthlyBandTotals = getCurrentMonthBandTotals(products, monthKey);
+      const extra = getCurrentMonthExtraStats(products, monthKey);
 
         const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.innerText=val;};
-        setEl('totalSumStat',totalAll);
+        setEl('totalSumStat',monthlyTotal);
         setEl('dailySumStat',dailyTotal);
-
-        const extra=getExtraStats(products);
         setEl('dazmolTotal',extra.dazmolAll);
         setEl('upakovkaTotal',extra.upakovkaAll);
 
-        const allTimeBands=aggregateAllTimeBands(products);
         let topBand=null, topQty=0;
-        for(const[band,qty]of Object.entries(allTimeBands)) if(qty>topQty){topQty=qty;topBand=band;}
+        for(const[band,qty]of Object.entries(monthlyBandTotals)) if(qty>topQty){topQty=qty;topBand=band;}
         setEl('topBandName',topBand||'—');
         setEl('topBandQty',topQty);
 
@@ -928,10 +1092,9 @@
 
         renderMainChart(products, dateKey);
         renderYearlyChart(products);
-        const last30=aggregateLast30Days(products);
-        renderBandBarChart(last30);
-        renderRanking(last30);
-        renderExtraStats(extra.upakovkaAll,extra.upakovka30,extra.dazmolAll,extra.dazmol30);
+        renderBandBarChart(monthlyBandTotals);
+        renderRanking(monthlyBandTotals);
+        renderExtraStats(extra.upakovkaAll, extra.dazmolAll);
         renderMonthlyTable(incoming,expenses);
 
         document.querySelectorAll('.stats-card').forEach(card=>{
