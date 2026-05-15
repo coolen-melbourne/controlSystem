@@ -9,102 +9,207 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    body { background: linear-gradient(135deg, #f5f7fa 0%, #e9edf2 100%); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
-    .navbar { background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border-bottom: 0.5px solid rgba(0,0,0,0.1); }
-    .nav-link { font-weight: 500; transition: color 0.2s; }
-    .nav-link.active { color: #007aff; }
-    .chart-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(2px); border-radius: 1.75rem; box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .chart-card:hover { transform: translateY(-4px); box-shadow: 0 25px 40px -14px rgba(0,0,0,0.2); }
-    canvas { max-height: 65vh; width: 100%; }
-    @media (max-width: 640px) { 
-      .chart-card { padding: 0.75rem; } 
+    /* Global styles */
+    body {
+      background: linear-gradient(145deg, #eef2f9 0%, #e2e8f0 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+    
+    /* Navbar */
+    .navbar {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .nav-link {
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-link.active {
+      color: #3b82f6;
+    }
+    
+    /* Cards with glass effect */
+    .stats-card, .ranking-card, .chart-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(2px);
+      border-radius: 1.75rem;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    .stats-card:hover, .ranking-card:hover, .chart-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 25px 40px -14px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* ✅ Yangi to‘lqin effekti – faqat grafik kartochkasining yuqori chetida */
+    .chart-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .chart-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -20%;
+      width: 140%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, #3b82f6, #8b5cf6, #ec4899, transparent);
+      animation: waveSlider 3s linear infinite;
+      border-radius: 4px;
+      opacity: 0.7;
+      z-index: 5;
+    }
+    @keyframes waveSlider {
+      0% { transform: translateX(-20%); }
+      100% { transform: translateX(20%); }
+    }
+    
+    canvas {
+      max-height: 65vh;
+      width: 100%;
+    }
+    
+    @media (max-width: 640px) {
+      .chart-card { padding: 0.75rem; }
       canvas { max-height: 50vh; }
       .stats-card p { font-size: 0.75rem; }
       .stats-card .text-2xl { font-size: 1.25rem; }
     }
-    .stats-card, .ranking-card { background: white; border-radius: 1.25rem; transition: all 0.2s; }
-    .stats-card:hover, .ranking-card:hover { transform: scale(1.02); }
-    .ranking-table th, .ranking-table td { font-size: 0.7rem; padding: 0.5rem 0.3rem; }
+    
+    .ranking-table th, .ranking-table td {
+      font-size: 0.7rem;
+      padding: 0.5rem 0.3rem;
+    }
     .negative-value { color: #ef4444; }
-    .clickable { cursor: pointer; transition: all 0.2s; }
-    .clickable:hover { background-color: #f3f4f6; transform: scale(1.02); }
-    .refresh-pulse { animation: pulse-glow 0.4s ease-out; }
+    .clickable {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .clickable:hover {
+      background-color: rgba(59, 130, 246, 0.05);
+      transform: scale(1.02);
+    }
+    .refresh-pulse {
+      animation: pulse-glow 0.4s ease-out;
+    }
     @keyframes pulse-glow {
       0% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); transform: scale(1); }
       50% { box-shadow: 0 0 0 8px rgba(59,130,246,0.2); transform: scale(1.01); }
       100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); transform: scale(1); }
     }
-    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:2000; }
-    .modal-content { background:white; border-radius:1.5rem; max-width:90vw; width:900px; max-height:80vh; overflow-y:auto; padding:1.5rem; box-shadow:0 20px 35px -12px rgba(0,0,0,0.3); }
+    
+    /* Modals */
+    .modal-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+      display:flex; align-items:center; justify-content:center; z-index:2000;
+    }
+    .modal-content {
+      background: white; border-radius:1.5rem; max-width:90vw; width:900px;
+      max-height:80vh; overflow-y:auto; padding:1.5rem;
+      box-shadow:0 20px 35px -12px rgba(0,0,0,0.3);
+    }
     .modal-content h3 { font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:#1e293b; }
     .modal-content table { width:100%; border-collapse:collapse; font-size:0.8rem; }
     .modal-content th, .modal-content td { padding:0.5rem; border-bottom:1px solid #e2e8f0; text-align:left; }
     .modal-content th { background:#f8fafc; font-weight:600; }
-    .close-modal { float:right; font-size:1.5rem; font-weight:bold; cursor:pointer; color:#64748b; transition:color 0.2s; }
+    .close-modal { float:right; font-size:1.5rem; font-weight:bold; cursor:pointer; color:#64748b; }
     .close-modal:hover { color:#ef4444; }
     .thumb-small { width:40px; height:40px; object-fit:cover; border-radius:8px; }
-
-    .fullscreen-overlay { position: fixed; top:0; left:0; width:100%; height:100%; z-index:1000; display:flex; flex-direction:column; padding:1rem; box-sizing:border-box; overflow-y:auto; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; color:#fff; }
+    
+    /* Fullscreen overlay */
+    .fullscreen-overlay {
+      position: fixed; top:0; left:0; width:100%; height:100%; z-index:1000;
+      display:flex; flex-direction:column; padding:1rem; box-sizing:border-box;
+      overflow-y:auto; font-family: system-ui, -apple-system, 'Segoe UI', Roboto;
+      color:#fff;
+    }
     @media (min-width:768px) { .fullscreen-overlay { padding:2rem; } }
-    .fullscreen-overlay #bgVideo { position: fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; pointer-events:none; }
-    .fullscreen-overlay .stats-cards-container { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:1.2rem; margin-bottom:1.5rem; position:relative; z-index:2; }
-    .fullscreen-overlay .stats-card { background:rgba(255,255,255,0.2); backdrop-filter:blur(12px); border-radius:1.5rem; border:1px solid rgba(255,255,255,0.35); box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0.9rem 1.1rem; transition:all 0.2s ease; }
-    .fullscreen-overlay .stats-card:hover { background:rgba(255,255,255,0.3); transform:translateY(-2px); border-color:rgba(255,255,255,0.5); }
-    .fullscreen-overlay .stats-card h3 { font-size:0.95rem; font-weight:600; margin-bottom:0.6rem; color:white; text-shadow:0 1px 2px rgba(0,0,0,0.2); letter-spacing:0.3px; }
-    .fullscreen-overlay .stats-card .stat-row { display:flex; justify-content:space-between; margin-bottom:0.45rem; font-size:0.85rem; }
+    .fullscreen-overlay #bgVideo {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      object-fit:cover; z-index:0; pointer-events:none;
+    }
+    .fullscreen-overlay .stats-cards-container {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+      gap:1.2rem; margin-bottom:1.5rem; position:relative; z-index:2;
+    }
+    .fullscreen-overlay .stats-card {
+      background:rgba(255,255,255,0.2); backdrop-filter:blur(12px);
+      border-radius:1.5rem; border:1px solid rgba(255,255,255,0.35);
+      box-shadow:0 8px 25px rgba(0,0,0,0.2); padding:0.9rem 1.1rem;
+    }
+    .fullscreen-overlay .stats-card h3 {
+      font-size:0.95rem; font-weight:600; margin-bottom:0.6rem;
+      color:white; text-shadow:0 1px 2px rgba(0,0,0,0.2);
+    }
+    .fullscreen-overlay .stats-card .stat-row {
+      display:flex; justify-content:space-between; margin-bottom:0.45rem; font-size:0.85rem;
+    }
     .fullscreen-overlay .stats-card .stat-label { color:rgba(255,250,220,0.9); }
     .fullscreen-overlay .stats-card .stat-value { font-weight:700; color:#ffd966; }
-    .fullscreen-overlay .chart-wrapper { position:relative; z-index:2; flex:1; min-height:60vh; display:flex; align-items:center; justify-content:center; margin:1rem 0; background:rgba(0,0,0,0.3); backdrop-filter:blur(8px); border-radius:1.5rem; padding:1rem; border:1px solid rgba(255,255,255,0.25); overflow-y:auto; max-height:80vh; }
-    .fullscreen-overlay canvas { width:100%; height:auto; max-width:100%; max-height:70vh; background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem; box-shadow:0 8px 20px rgba(0,0,0,0.1); }
-    .fullscreen-overlay .close-fullscreen { position:fixed; top:1rem; right:1rem; background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:none; border-radius:40px; width:44px; height:44px; font-size:24px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:1001; transition:all 0.2s ease; }
-    .fullscreen-overlay .close-fullscreen:hover { background:rgba(0,0,0,0.8); transform:scale(1.05); }
+    .fullscreen-overlay .chart-wrapper {
+      position:relative; z-index:2; flex:1; min-height:60vh;
+      display:flex; align-items:center; justify-content:center;
+      margin:1rem 0; background:rgba(0,0,0,0.3); backdrop-filter:blur(8px);
+      border-radius:1.5rem; padding:1rem; border:1px solid rgba(255,255,255,0.25);
+    }
+    .fullscreen-overlay canvas {
+      width:100%; height:auto; max-width:100%; max-height:70vh;
+      background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem;
+    }
+    .fullscreen-overlay .close-fullscreen {
+      position:fixed; top:1rem; right:1rem;
+      background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); border:none;
+      border-radius:40px; width:44px; height:44px; font-size:24px; color:white;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      z-index:1001;
+    }
     @media (min-width:768px) { .fullscreen-overlay .close-fullscreen { top:2rem; right:2rem; } }
-
+    
+    /* Marquee footer */
     @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-    .marquee-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6)); color: #ffd966; padding: 0.5rem 0; text-align: center; z-index: 999; font-weight: 600; overflow: hidden; height: 40px; display: flex; align-items: center; justify-content: center; }
-    .marquee-footer .marquee-text { display: inline-block; animation: marquee 8s linear infinite; white-space: nowrap; padding-left: 100%; }
+    .marquee-footer {
+      position: fixed; bottom: 0; left: 0; width: 100%;
+      background: linear-gradient(90deg, rgba(0,0,0,0.8), rgba(0,0,0,0.6));
+      color: #ffd966; padding: 0.5rem 0; text-align: center; z-index: 999;
+      font-weight: 600; overflow: hidden; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .marquee-footer .marquee-text {
+      display: inline-block; animation: marquee 8s linear infinite;
+      white-space: nowrap; padding-left: 100%;
+    }
     .marquee-footer .marquee-text:hover { animation-play-state: paused; }
-
-    @keyframes heartbeat { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-    .blinking-band { animation: heartbeat 1s ease-in-out infinite; background-color: #ef4444 !important; border: 2px solid #dc2626; }
-
-    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px; }
-    .toast { background: rgba(0,0,0,0.9); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-size: 14px; opacity: 0; transform: translateX(100%); transition: all 0.3s ease; }
+    
+    /* Toast */
+    .toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px;
+    }
+    .toast {
+      background: rgba(0,0,0,0.9); color: white; padding: 12px 16px;
+      border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 14px; opacity: 0; transform: translateX(100%);
+      transition: all 0.3s ease;
+    }
     .toast.show { opacity: 1; transform: translateX(0); }
     .toast.hide { opacity: 0; transform: translateX(100%); }
-
-    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s; }
-    .loading-spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid #dc2626; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    
+    /* Loading overlay */
+    .loading-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+      z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; transition: opacity 0.3s;
+    }
+    .loading-spinner {
+      width: 60px; height: 60px; border: 4px solid #f3f3f3;
+      border-top: 4px solid #3b82f6; border-radius: 50%;
+      animation: spin 1s linear infinite; margin-bottom: 20px;
+    }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .loading-text { font-size: 24px; font-weight: bold; color: #dc2626; }
-
-    /* Wave animations */
-    @keyframes wave1 { 0% { transform: translateX(0); } 100% { transform: translateX(100%); } }
-    @keyframes wave2 { 0% { transform: translateX(-100%); } 100% { transform: translateX(0); } }
-    @keyframes wave3 { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
-    .wave-container { position: relative; width: 100%; height: 120px; margin: 1.5rem 0; overflow: hidden; }
-    .wave-container svg { position: absolute; width: 200%; height: 100%; }
-    .wave-svg-1 { animation: wave1 15s linear infinite; opacity: 0.7; }
-    .wave-svg-2 { animation: wave2 10s linear infinite; opacity: 0.5; }
-    .wave-svg-3 { animation: wave3 20s linear infinite; opacity: 0.3; }
-    @media (max-width: 640px) { .wave-container { height: 80px; } }
-    .chart-card::before { 
-      content: ''; 
-      position: absolute; 
-      top: -20px; 
-      left: 0; 
-      right: 0; 
-      height: 20px; 
-      background: radial-gradient(circle at 20% 50%, #3b82f6 0%, transparent 50%), 
-                  radial-gradient(circle at 80% 80%, #8b5cf6 0%, transparent 50%);
-      background-size: 40px 40px;
-      background-position: 0 0, 20px 0;
-      animation: wave-shimmer 3s ease-in-out infinite;
-    }
-    @keyframes wave-shimmer {
-      0%, 100% { opacity: 0.3; transform: translateY(0); }
-      50% { opacity: 0.8; transform: translateY(-5px); }
-    }
+    .loading-text { font-size: 24px; font-weight: bold; color: #3b82f6; }
   </style>
 </head>
 <body class="antialiased">
@@ -115,7 +220,8 @@
 
   {{> navbar}}
 
-  <div class="w-full px-4 py-10 mt-10 sm:py-10 pt-40">
+  <div class="w-full px-4 py-10 mt-10 sm:py-10 pt-40 relative z-10">
+    <!-- Stats Cards -->
     <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div class="stats-card p-4 flex items-center gap-3 shadow-sm">
         <div class="bg-blue-100 p-3 rounded-full"><span class="text-2xl">📊</span></div>
@@ -128,8 +234,7 @@
           <div class="mt-1 space-y-1 text-sm font-medium text-gray-700">
             <p>🔥 Dazmol: <span id="dazmolTotal" class="font-bold text-indigo-600">0</span> dona</p>
             <p>📦 Upakovka: <span id="upakovkaTotal" class="font-bold text-indigo-600">0</span> dona</p>
-            <p>🥇 Eng ko'p tikkan band: <span id="topBandName" class="font-bold text-emerald-600">—</span>
-               (<span id="topBandQty" class="font-bold text-emerald-600">0</span> dona)</p>
+            <p>🥇 Eng ko'p tikkan band: <span id="topBandName" class="font-bold text-emerald-600">—</span> (<span id="topBandQty" class="font-bold text-emerald-600">0</span> dona)</p>
           </div>
         </div>
       </div>
@@ -146,21 +251,7 @@
       </div>
     </div>
 
-    <div class="wave-container">
-      <svg class="wave-svg-1" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,50 Q300,10 600,50 T1200,50 L1200,100 L0,100 Z" fill="url(#waveGradient1)" />
-        <defs><linearGradient id="waveGradient1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.8" /><stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.2" /></linearGradient></defs>
-      </svg>
-      <svg class="wave-svg-2" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,60 Q300,30 600,60 T1200,60 L1200,100 L0,100 Z" fill="url(#waveGradient2)" />
-        <defs><linearGradient id="waveGradient2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.6" /><stop offset="100%" stop-color="#5b21b6" stop-opacity="0.1" /></linearGradient></defs>
-      </svg>
-      <svg class="wave-svg-3" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,70 Q300,40 600,70 T1200,70 L1200,100 L0,100 Z" fill="url(#waveGradient3)" />
-        <defs><linearGradient id="waveGradient3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ec4899" stop-opacity="0.5" /><stop offset="100%" stop-color="#be185d" stop-opacity="0.1" /></linearGradient></defs>
-      </svg>
-    </div>
-
+    <!-- Main Chart Card (to‘lqin effekti shu kartochkaning yuqori chetida) -->
     <div id="mainChartCard" class="chart-card p-4 sm:p-6 mb-8 relative">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
         <div class="flex items-center gap-3 flex-wrap">
@@ -198,17 +289,6 @@
       <div class="mt-3 text-xs text-gray-400 text-center">📅 So'nggi 12 kalendar oy davomida qo'shilgan jami miqdorlar.</div>
     </div>
 
-    <div class="wave-container">
-      <svg class="wave-svg-2" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,30 Q300,60 600,30 T1200,30 L1200,0 L0,0 Z" fill="url(#waveGradient4)" />
-        <defs><linearGradient id="waveGradient4" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3" /><stop offset="100%" stop-color="#0891b2" stop-opacity="0.7" /></linearGradient></defs>
-      </svg>
-      <svg class="wave-svg-1" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,40 Q300,10 600,40 T1200,40 L1200,0 L0,0 Z" fill="url(#waveGradient5)" />
-        <defs><linearGradient id="waveGradient5" x1="0%" y1="100%" x2="0%" y2="0%"><stop offset="0%" stop-color="#14b8a6" stop-opacity="0.4" /><stop offset="100%" stop-color="#0d9488" stop-opacity="0.6" /></linearGradient></defs>
-      </svg>
-    </div>
-
     <div class="ranking-card p-5 shadow-sm mb-6">
       <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo'yicha tikilgan ishlar statistikasi (oylik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
       <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 Oylik tikuv miqdori – grafik ko'rinish</div></div>
@@ -223,13 +303,6 @@
     <div class="ranking-card p-5 shadow-sm mb-6">
       <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📅 Oylik kirim va chiqim (so'nggi 12 oy)</h2>
       <div id="monthlyTableContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
-    </div>
-
-    <div class="wave-container">
-      <svg class="wave-svg-3" viewBox="0 0 1200 100" preserveAspectRatio="none">
-        <path d="M0,50 Q300,20 600,50 T1200,50 L1200,100 L0,100 Z" fill="url(#waveGradient6)" />
-        <defs><linearGradient id="waveGradient6" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6" /><stop offset="100%" stop-color="#d97706" stop-opacity="0.1" /></linearGradient></defs>
-      </svg>
     </div>
 
     <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌 Grafiklar yuqori o'ng burchakdagi ⛶ tugmasi bilan to'liq ekranga kengaytiriladi. Esc tugmasi bilan chiqiladi.</div>
@@ -612,14 +685,14 @@
           plugins: [ChartDataLabels]
         });
 
-        // Blinking bands
+        // Blinking bands (warning only)
         const currentHour = new Date().getHours();
         const shouldBlink = currentHour >= 8;
         const zeroBands = BAND_TYPES.slice(0, 15).filter(b => (dailyTotals[b]||0) === 0 && shouldBlink);
         const blinkingDiv = document.getElementById('blinkingBands');
         if (blinkingDiv) {
           blinkingDiv.innerHTML = zeroBands.length
-            ? zeroBands.map(b => `<span class="inline-block bg-red-500 text-white px-3 py-1 rounded-full mx-1 font-semibold blinking-band">${b}</span>`).join('')
+            ? zeroBands.map(b => `<span class="inline-block bg-red-500 text-white px-3 py-1 rounded-full mx-1 font-semibold" style="animation: heartbeat 1s ease-in-out infinite;">${b}</span>`).join('')
             : '';
         }
         zeroBands.forEach(band => { if (!shownToasts.has(band)) { shownToasts.add(band); showToast(`${band} hozircha 0 dona tikkan!`, 5000); } });
@@ -703,7 +776,7 @@
         const entries = BAND_TYPES.map(t => [t, monthlySums[t]||0]).sort((a,b)=>b[1]-a[1]);
         const totalLast = entries.reduce((s,[,v])=>s+v,0);
         if (!totalLast) { container.innerHTML='<div class="text-center py-6 text-gray-400">📭 Oylik maʼlumot yo\'q.</div>'; return; }
-        let html='<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Oylik</th></tr></thead><tbody>';
+        let html='<table class="ranking-table w-full text-left border-collapse"><thead><tr class="border-b border-gray-200"><th class="py-2 px-3 text-xs font-semibold text-gray-500">#</th><th class="py-2 px-3 text-xs font-semibold text-gray-500">Band</th><th class="py-2 px-3 text-xs font-semibold text-gray-500 text-right">Oylik</th><tr></thead><tbody>';
         entries.forEach(([type,qty],idx)=> { html+=`<tr class="border-b border-gray-100 hover:bg-gray-50"><td class="py-3 px-3 text-sm text-gray-500">${idx+1}</td><td class="py-3 px-3 text-sm font-semibold">${type}</td><td class="py-3 px-3 text-sm font-bold text-indigo-600 text-right">${qty}</td></tr>`; });
         html+=`</tbody><tfoot class="border-t-2 border-gray-200 bg-gray-50"><tr><td colspan="2" class="py-3 px-3 text-sm font-bold">Jami</td><td class="py-3 px-3 text-sm font-bold text-indigo-700 text-right">${totalLast}</td></tr></tfoot></table>`;
         container.innerHTML=html;
@@ -835,7 +908,7 @@
       }
       function closeModal(id){document.getElementById(id)?.classList.add('hidden');}
 
-      // ---------- FULLSCREEN (optimized) ----------
+      // ---------- FULLSCREEN ----------
       async function updateFullscreenStats(statsContainer) {
         try {
           const data = await fetchAllData();
@@ -1021,5 +1094,13 @@
       window.showAccessoriesModal = showAccessoriesModal;
     })();
   </script>
+  <style>
+    /* Heartbeat animation for blinking bands only */
+    @keyframes heartbeat {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
 </body>
 </html>

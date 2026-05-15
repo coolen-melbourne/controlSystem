@@ -6,19 +6,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title>BestTex Admin</title>
     <style>
-        @keyframes spinReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
-        @keyframes pulse-loader { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        @keyframes glow-pulse { 0%, 100% { filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6)); } 50% { filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.9)); } }
-        @keyframes float-up { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-        @keyframes pulse-scale { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
-        #introLoader { animation: pulse-loader 0.3s ease-in; }
-        .loader-circle-outer { animation: spin 2.5s linear infinite, glow-pulse 2s ease-in-out infinite; }
-        .loader-circle-inner { animation: spinReverse 3.5s linear infinite; }
-        .loader-text { animation: float-up 2s ease-in-out infinite; }
-        .loader-dot { animation: pulse-scale 1.5s ease-in-out infinite; }
-
+        /* Loader animatsiyalari butunlay olib tashlandi */
+        
         .navbar {
             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -104,25 +93,7 @@
 </head>
 <body class="bg-gray-50 font-sans">
 
-<!-- 1. Intro Loader -->
-<div id="introLoader" class="fixed inset-0 z-[200] bg-gradient-to-br from-red-50 via-white to-blue-50 flex items-center justify-center transition-opacity duration-500 ease-out">
-    <div class="text-center">
-        <div class="relative w-32 h-32 mx-auto mb-8">
-            <div class="loader-circle-outer absolute inset-0 rounded-full border-4 border-transparent border-t-red-600 border-r-red-400 border-b-blue-500"></div>
-            <div class="loader-circle-inner absolute inset-3 rounded-full border-3 border-transparent border-t-blue-600 border-r-blue-400 border-b-red-500 border-l-red-600"></div>
-            <div class="absolute inset-6 rounded-full border-2 border-transparent border-t-red-500 border-b-blue-500" style="animation: spin 1.5s linear infinite reverse;"></div>
-            <div class="loader-dot absolute inset-0 flex items-center justify-center">
-                <div class="w-4 h-4 bg-gradient-to-r from-red-600 via-red-500 to-blue-600 rounded-full shadow-lg shadow-red-500"></div>
-            </div>
-        </div>
-        <p class="loader-text text-center">
-            <span class="text-3xl font-bold bg-gradient-to-r from-red-600 via-red-500 to-blue-600 bg-clip-text text-transparent">THE BEST TEX</span><br>
-            <span class="text-xs text-gray-500 tracking-widest mt-2 inline-block">Yuklanmoqda...</span>
-        </p>
-    </div>
-</div>
-
-<!-- 2. Navbar -->
+<!-- Navbar -->
 <nav class="navbar fixed top-0 left-0 right-0 z-50 px-4 py-3 border-b border-gray-100">
     <div class="max-w-[1440px] mx-auto flex items-center justify-between">
 
@@ -148,7 +119,6 @@
 
         <!-- O'ng tomon -->
         <div class="flex items-center gap-2">
-            <!-- ✅ FIX 1: desktop button uchun alohida id -->
             <button id="testAnnounceBtnDesktop" class="hidden md:block bg-slate-800 hover:bg-blue-600 text-white text-xs font-semibold px-5 py-2.5 rounded-full transition-all active:scale-90">
                 🔊 Test ovoz
             </button>
@@ -161,7 +131,7 @@
     </div>
 </nav>
 
-<!-- 3. Mobile/Tablet Sidebar -->
+<!-- Mobile/Tablet Sidebar -->
 <div id="mobileSidebar" class="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm hidden-sidebar transition-all duration-300">
     <div class="absolute inset-0" onclick="toggleMenu(false)"></div>
 
@@ -187,7 +157,6 @@
             <a href="/mikrafon" class="sidebar-link"><span class="text-lg">🎤</span> <span>Mikrafon</span></a>
         </div>
 
-        <!-- ✅ FIX 1: mobile button uchun alohida id -->
         <div class="pt-6 border-t border-gray-100">
             <button id="testAnnounceBtnMobile" class="w-full py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-bold active:scale-95 transition-all duration-200 hover:shadow-lg hover:shadow-slate-900/20">
                 🔊 Test Ovoz
@@ -231,14 +200,6 @@
 </main>
 
 <script>
-    // Loader yashirish
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            document.getElementById('introLoader').style.opacity = '0';
-            setTimeout(() => document.getElementById('introLoader').remove(), 500);
-        }, 800);
-    });
-
     // Telegram daily toast
     (function() {
         function showTelegramDailyToast() {
@@ -318,7 +279,7 @@
         playNext();
     }
 
-    // ✅ FIX 1: Har ikkala tugmani class orqali yoki alohida id bilan bind qilish
+    // Test ovoz tugmalari
     document.addEventListener('DOMContentLoaded', () => {
         const desktopBtn = document.getElementById('testAnnounceBtnDesktop');
         const mobileBtn = document.getElementById('testAnnounceBtnMobile');
@@ -327,12 +288,12 @@
         if (mobileBtn) mobileBtn.addEventListener('click', () => playSound(1));
     });
 
-    // ✅ FIX 2: scheduleDailySounds — to'g'rilangan tartib va izohlar
+    // Kunlik ovozli xabarlar jadvali
     function scheduleDailySounds() {
         const now = new Date();
         const today = now.toDateString();
 
-        // 07:55 — ishga 5 daqiqa qoldi ogohlantirishи (10 marta)
+        // 07:55 — ishga 5 daqiqa qoldi (10 marta)
         const preMorning = new Date(today + ' 07:55:00');
         if (now < preMorning) {
             setTimeout(() => playSound(10), preMorning - now);
@@ -350,20 +311,20 @@
             setTimeout(() => playSound(5), noon - now);
         }
 
-        // 12:55 — tushlikdan qaytish ogohlantirishи (10 marta)
+        // 12:55 — tushlikdan qaytish (10 marta)
         const preAfternoon = new Date(today + ' 12:55:00');
         if (now < preAfternoon) {
             setTimeout(() => playSound(10), preAfternoon - now);
         }
 
-        // 13:00 — tushlikdan keyin ish boshlandi (5 marta)
+        // 13:00 — tushlikdan keyin ish (5 marta)
         const afternoon = new Date(today + ' 13:00:00');
         if (now < afternoon) {
             setTimeout(() => playSound(5), afternoon - now);
         }
 
         // 17:55 — ish tugashiga 5 daqiqa qoldi (15 marta)
-        const preEvening = new Date(today + ' 7:40:00');
+        const preEvening = new Date(today + ' 17:55:00');
         if (now < preEvening) {
             setTimeout(() => playSound(15), preEvening - now);
         }
@@ -374,7 +335,7 @@
             setTimeout(() => playSound(5), evening - now);
         }
 
-        // Ertangi kun uchun qayta jadval
+        // Ertangi kun uchun jadvalni qayta ishga tushirish
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(0, 0, 0, 0);

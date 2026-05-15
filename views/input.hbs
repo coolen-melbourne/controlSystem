@@ -21,8 +21,37 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes heartbeat { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
     .heartbeat { animation: heartbeat 0.3s ease-in-out 2; border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.2) !important; }
-    /* optimallashtirish: animatsiyani faqat xato vaqtida qisqa ishlatamiz */
     button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+    /* ✅ Markazda katta xabar uchun stil */
+    .center-big-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #1e293b;
+      font-size: 1.8rem;
+      font-weight: bold;
+      padding: 1.5rem 2.5rem;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      text-align: center;
+      white-space: nowrap;
+      border: 2px solid #fff;
+      backdrop-filter: blur(4px);
+      animation: bounceIn 0.3s ease-out;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto;
+    }
+    @keyframes bounceIn {
+      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      80% { transform: translate(-50%, -50%) scale(1.05); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    @media (max-width: 640px) {
+      .center-big-message { font-size: 1.2rem; padding: 1rem 1.5rem; white-space: normal; width: 80%; text-align: center; }
+    }
   </style>
 </head>
 <body class="antialiased">
@@ -124,11 +153,11 @@
     "9-band","10-band","11-band","12-band","13-band","14-band","15-band",
     "16-band","17-band","18-band","Upakovka","Dazmol"
   ];
-  let items = [];          // mahalliy kesh, serverdan kelgan maʼlumotlar
+  let items = [];
   let currentPage = 1;
   const ITEMS_PER_PAGE = 20;
   let editingId = null;
-  let pendingRequest = null;  // oldingi fetch bekor qilish uchun (ixtiyoriy)
+  let pendingRequest = null;
 
   // DOM elementlari
   const productTypeSelect = document.getElementById('productTypeSelect');
@@ -170,6 +199,27 @@
     return `<span class="inline-flex gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">📌 ${type}</span>`;
   }
 
+  // ✅ Yangi funksiya: markazda katta xabar
+  function showCenteredBigMessage(msg, bgColor = '#fbbf24', textColor = '#1e293b', duration = 2000) {
+    const existing = document.querySelector('.center-big-message');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.className = 'center-big-message';
+    div.style.backgroundColor = bgColor;
+    div.style.color = textColor;
+    div.innerHTML = msg;
+    document.body.appendChild(div);
+    setTimeout(() => {
+      div.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => div.remove(), 300);
+    }, duration);
+  }
+  // fadeOut animatsiyasini qo‘shamiz (dinamik)
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = `@keyframes fadeOut { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }`;
+  document.head.appendChild(styleSheet);
+
+  // Eski showTopAlert saqlab qo‘yiladi (kichik xabarlar uchun), lekin asosiy rahmat uchun markaziy katta ishlatiladi
   function showTopAlert(msg, color='green') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `fixed top-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-6 py-3 rounded-lg text-sm shadow-lg z-50 border-l-4 border-${color}-700 transition-opacity duration-300`;
@@ -178,7 +228,7 @@
     setTimeout(() => { alertDiv.style.opacity = '0'; setTimeout(() => alertDiv.remove(), 300); }, 2500);
   }
 
-  // ---------- Jadval va paginatsiya (tez render) ----------
+  // ---------- Jadval va paginatsiya ----------
   function renderTable() {
     const total = items.length;
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
@@ -231,7 +281,6 @@
     html+=`<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage===totalPages?'opacity-50 cursor-not-allowed':''}" data-page="next">»</button>`;
     paginationContainer.innerHTML = html;
 
-    // Event listenerlarni biriktirish (optimallashtirilgan)
     paginationContainer.querySelectorAll('[data-page]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -248,7 +297,7 @@
 
   function renderAll() { renderTable(); renderPagination(); }
 
-  // ---------- Serverga so‘rov (optimistik UI bilan) ----------
+  // ---------- Server so‘rovlari ----------
   async function loadItemsFromServer() {
     try {
       const res = await fetch('/api/productmanager');
@@ -261,13 +310,12 @@
     }
   }
 
-  // Optimistik qo‘shish
-  async function optimisticAdd(item) {
+  // Optimistik qo‘shish (skipThankYou = true bo‘lsa rahmat xabari chiqmaydi)
+  async function optimisticAdd(item, skipThankYou = false) {
     const tempId = 'temp_' + Date.now() + '_' + Math.random();
     const newItem = { ...item, _id: tempId, createdAt: new Date().toISOString() };
     items.unshift(newItem);
     renderAll();
-    // Sahifani eng yuqoriga (yangi element ko‘rinishi uchun)
     if (currentPage !== 1) { currentPage = 1; renderAll(); }
     try {
       const res = await fetch('/api/productmanager', {
@@ -277,13 +325,17 @@
       });
       if (!res.ok) throw new Error('Server error');
       const saved = await res.json();
-      // Vaqtinchalik ID ni haqiqiy ID bilan almashtirish
       const index = items.findIndex(i => i._id === tempId);
       if (index !== -1) items[index] = saved;
       renderAll();
-      showTopAlert('✅ Yangi mahsulot qo‘shildi', 'green');
+      
+      // ✅ Markazda katta rahmat xabari (faqat oddiy qo‘shishda va ism “Namuna” emas)
+      if (!skipThankYou && item.enteredBy && item.enteredBy !== 'Namuna') {
+        showCenteredBigMessage(`✨ Rahmat, ${escapeHtml(item.enteredBy)}! ✨<br>✅ Mahsulot qo‘shildi`, '#fbbf24', '#1e293b', 2200);
+      } else {
+        showTopAlert('✅ Yangi mahsulot qo‘shildi', 'green');
+      }
     } catch (err) {
-      // Xatolik bo‘lsa, vaqtinchalik elementni o‘chirib, qayta yuklaymiz
       items = items.filter(i => i._id !== tempId);
       renderAll();
       showTopAlert('❌ Saqlashda xatolik, qayta urining', 'red');
@@ -335,7 +387,7 @@
     }
   }
 
-  // ---------- Forma va UI logikasi ----------
+  // ---------- Forma logikasi ----------
   function resetFormToAddMode() {
     editingId = null;
     quantityInput.value = '';
@@ -362,7 +414,6 @@
     document.querySelector('.ios-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  // Validatsiya va yuborish (debounced)
   let submitInProgress = false;
   async function handleSubmit() {
     if (submitInProgress) return;
@@ -392,7 +443,7 @@
         await optimisticUpdate(editingId, { productType, quantity, enteredBy });
         resetFormToAddMode();
       } else {
-        await optimisticAdd({ productType, quantity, enteredBy });
+        await optimisticAdd({ productType, quantity, enteredBy }, false);
         resetFormToAddMode();
       }
     } catch (err) {
@@ -404,7 +455,7 @@
     }
   }
 
-  // ---------- Namuna yaratish (optimistik) ----------
+  // ---------- Namuna yaratish ----------
   async function generateSampleData() {
     if (generateSampleBtn.disabled) return;
     generateSampleBtn.disabled = true;
@@ -414,8 +465,7 @@
       for (let i = 1; i <= 25; i++) {
         const productType = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
         const quantity = Math.floor(Math.random() * 200) + 1;
-        await optimisticAdd({ productType, quantity, enteredBy: 'Namuna' });
-        // Kichik pauza serverni haddan tashqari bosmaslik uchun (ixtiyoriy)
+        await optimisticAdd({ productType, quantity, enteredBy: 'Namuna' }, true);
         if (i % 5 === 0) await new Promise(r => setTimeout(r, 30));
       }
       showTopAlert('25 ta namuna qo‘shildi', 'green');
@@ -427,7 +477,7 @@
     }
   }
 
-  // ---------- Eslatmalar (hech qanday o‘zgarishsiz, faqat tezlik uchun event delegation) ----------
+  // ---------- Eslatmalar ----------
   function loadNotes() {
     const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
     savedNotes.innerHTML = notes.map((n,i) => `
@@ -450,7 +500,7 @@
     loadNotes();
   };
 
-  // ---------- Event larni biriktirish (optimallashtirilgan) ----------
+  // ---------- Event binding ----------
   function bindEvents() {
     submitBtn.addEventListener('click', (e) => { e.preventDefault(); handleSubmit(); });
     cancelEditBtn.addEventListener('click', () => { resetFormToAddMode(); showTopAlert('Tahrirlash bekor qilindi', 'gray'); });
@@ -464,7 +514,6 @@
     quantityInput.addEventListener('input', () => quantityInput.classList.remove('heartbeat'));
     nameInput.addEventListener('input', () => nameInput.classList.remove('heartbeat'));
 
-    // Eslatmalar
     noteBtn.addEventListener('click', () => { noteModal.classList.remove('hidden'); loadNotes(); });
     closeNoteModal.addEventListener('click', () => noteModal.classList.add('hidden'));
     saveNoteBtn.addEventListener('click', () => {
