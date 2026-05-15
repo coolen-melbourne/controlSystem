@@ -8,7 +8,7 @@
   <style>
     body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
     .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
-    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; }
+    .ios-button { border-radius: 0.75rem; font-weight: 500; transition: all 0.15s ease; cursor: pointer; }
     .ios-button:active { transform: scale(0.96); }
     .ios-input, .ios-select { border-radius: 0.75rem; background-color: #f9f9fb; border: 1px solid #e5e5ea; }
     .ios-input:focus, .ios-select:focus { border-color: #007aff; outline: none; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
@@ -20,7 +20,9 @@
     .loader { border: 2px solid #f3f3f3; border-top: 2px solid #007aff; border-radius: 50%; width: 16px; height: 16px; animation: spin 0.6s linear infinite; display: inline-block; margin-right: 6px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @keyframes heartbeat { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
-    .heartbeat { animation: heartbeat 1s ease-in-out infinite; border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.2) !important; }
+    .heartbeat { animation: heartbeat 0.3s ease-in-out 2; border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239,68,68,0.2) !important; }
+    /* optimallashtirish: animatsiyani faqat xato vaqtida qisqa ishlatamiz */
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
   </style>
 </head>
 <body class="antialiased">
@@ -57,11 +59,11 @@
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Miqdori (dona) *</label>
-        <input type="number" id="quantityInput" min="1" step="1" value="" class="ios-input w-full px-3 py-2 text-sm">
+        <input type="number" id="quantityInput" min="1" step="1" value="" class="ios-input w-full px-3 py-2 text-sm" inputmode="numeric">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Ism *</label>
-        <input type="text" id="nameInput" placeholder="Ismingizni kiriting" class="ios-input w-full px-3 py-2 text-sm">
+        <input type="text" id="nameInput" placeholder="Ismingizni kiriting" class="ios-input w-full px-3 py-2 text-sm" autocomplete="off">
       </div>
       <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
         <button id="submitBtn" class="ios-button bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 shadow-md flex-1 flex items-center justify-center gap-2">✨ Qo'shish</button>
@@ -79,7 +81,6 @@
   <div class="ios-card overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
-        <!-- ✅ FIX 4: thead ichida <tr> qo'shildi -->
         <thead class="bg-gray-50">
           <tr>
             <th class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
@@ -117,16 +118,19 @@
 </div>
 
 <script>
+  // ---------- TEZ KESH VA OPTIMISTIK UI ----------
   const ALL_TYPES = [
     "1-band","2-band","3-band","4-band","5-band","6-band","7-band","8-band",
     "9-band","10-band","11-band","12-band","13-band","14-band","15-band",
     "16-band","17-band","18-band","Upakovka","Dazmol"
   ];
-  let items = [];
+  let items = [];          // mahalliy kesh, serverdan kelgan maʼlumotlar
   let currentPage = 1;
   const ITEMS_PER_PAGE = 20;
   let editingId = null;
+  let pendingRequest = null;  // oldingi fetch bekor qilish uchun (ixtiyoriy)
 
+  // DOM elementlari
   const productTypeSelect = document.getElementById('productTypeSelect');
   const quantityInput     = document.getElementById('quantityInput');
   const nameInput         = document.getElementById('nameInput');
@@ -147,157 +151,16 @@
   const clearNoteBtn      = document.getElementById('clearNoteBtn');
   const savedNotes        = document.getElementById('savedNotes');
 
-  // API
-  async function fetchItems() {
-    const res = await fetch('/api/productmanager');
-    items = await res.json();
-    renderAll();
+  // ---------- Yordamchi funksiyalar ----------
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
   }
 
-  async function addItemToAPI(item) {
-    const res = await fetch('/api/productmanager', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(item)
-    });
-    if (!res.ok) throw new Error('Server error');
-    return await res.json();
-  }
-
-  async function updateItemInAPI(id, updatedItem) {
-    const res = await fetch(`/api/productmanager/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedItem)
-    });
-    if (!res.ok) throw new Error('Update failed');
-    return await res.json();
-  }
-
-  async function deleteItemFromAPI(id) {
-    await fetch(`/api/productmanager/${id}`, { method: 'DELETE' });
-  }
-
-  async function generateSampleData() {
-    for (let i = 1; i <= 25; i++) {
-      const productType = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
-      const quantity = Math.floor(Math.random() * 200) + 1;
-      await addItemToAPI({ productType, quantity });
-    }
-    await fetchItems();
-    showTopAlert('25 ta namuna qo\'shildi', 'green');
-  }
-
-  function setButtonLoading(loading) {
-    if (loading) {
-      submitBtn.disabled = true;
-      submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-      submitBtn.innerHTML = '<span class="loader"></span> Saqlanmoqda...';
-    } else {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-      submitBtn.innerHTML = editingId ? '✏️ Yangilash' : '✨ Qo\'shish';
-    }
-  }
-
-  async function addItem() {
-    const productType = productTypeSelect.value;
-    const quantity = parseInt(quantityInput.value.trim(), 10);
-    const enteredBy = nameInput.value.trim();
-    if (isNaN(quantity) || quantity <= 0) {
-      quantityInput.classList.add('heartbeat');
-      setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
-      return;
-    }
-    if (!enteredBy) {
-      nameInput.classList.add('heartbeat');
-      setTimeout(() => nameInput.classList.remove('heartbeat'), 3000);
-      return;
-    }
-    quantityInput.classList.remove('heartbeat');
-    nameInput.classList.remove('heartbeat');
-    setButtonLoading(true);
-    try {
-      await addItemToAPI({ productType, quantity, enteredBy });
-      await fetchItems();
-      resetFormToAddMode();
-      showTopAlert('✅ Yangi mahsulot qo\'shildi', 'green');
-    } catch (err) {
-      console.error(err);
-      alert('Saqlashda xatolik yuz berdi. Qayta urinib ko\'ring.');
-    } finally {
-      setButtonLoading(false);
-    }
-  }
-
-  async function updateItem() {
-    if (!editingId) return;
-    const productType = productTypeSelect.value;
-    const quantity = parseInt(quantityInput.value.trim(), 10);
-    const enteredBy = nameInput.value.trim();
-    if (isNaN(quantity) || quantity <= 0) {
-      quantityInput.classList.add('heartbeat');
-      setTimeout(() => quantityInput.classList.remove('heartbeat'), 3000);
-      return;
-    }
-    if (!enteredBy) {
-      nameInput.classList.add('heartbeat');
-      setTimeout(() => nameInput.classList.remove('heartbeat'), 3000);
-      return;
-    }
-    quantityInput.classList.remove('heartbeat');
-    nameInput.classList.remove('heartbeat');
-    setButtonLoading(true);
-    try {
-      await updateItemInAPI(editingId, { productType, quantity, enteredBy });
-      await fetchItems();
-      resetFormToAddMode();
-      showTopAlert('✏️ Mahsulot tahrirlandi', 'blue');
-    } catch (err) {
-      console.error(err);
-      alert('Yangilashda xatolik yuz berdi.');
-    } finally {
-      setButtonLoading(false);
-    }
-  }
-
-  async function deleteItemById(id) {
-    if (!confirm('O\'chirishni tasdiqlaysizmi?')) return;
-    try {
-      await deleteItemFromAPI(id);
-      if (editingId === id) resetFormToAddMode();
-      await fetchItems();
-      showTopAlert('🗑 Yozuv o\'chirildi', 'orange');
-    } catch (err) {
-      console.error(err);
-      alert('O\'chirishda xatolik yuz berdi.');
-    }
-  }
-
-  function startEditItem(id) {
-    const item = items.find(i => i._id === id);
-    if (!item) return;
-    editingId = id;
-    productTypeSelect.value = item.productType;
-    quantityInput.value = item.quantity;
-    nameInput.value = item.enteredBy || '';
-    submitBtn.innerHTML = '✏️ Yangilash';
-    submitBtn.classList.remove('bg-blue-600','hover:bg-blue-700');
-    submitBtn.classList.add('bg-emerald-600','hover:bg-emerald-700');
-    cancelEditBtn.classList.remove('hidden');
-    formTitleSpan.innerHTML = `✏️ Tahrirlash (ID: ${item._id.toString().slice(-6)})`;
-    document.querySelector('.ios-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-
-  function resetFormToAddMode() {
-    editingId = null;
-    quantityInput.value = '';
-    nameInput.value = '';
-    submitBtn.innerHTML = '✨ Qo\'shish';
-    submitBtn.classList.remove('bg-emerald-600','hover:bg-emerald-700');
-    submitBtn.classList.add('bg-blue-600','hover:bg-blue-700');
-    cancelEditBtn.classList.add('hidden');
-    formTitleSpan.innerHTML = '➕ Yangi mahsulot qo\'shish';
+  function formatDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }
 
   function getProductTypeBadge(type) {
@@ -307,12 +170,15 @@
     return `<span class="inline-flex gap-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">📌 ${type}</span>`;
   }
 
-  function formatDateTime(iso) {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  function showTopAlert(msg, color='green') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `fixed top-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-6 py-3 rounded-lg text-sm shadow-lg z-50 border-l-4 border-${color}-700 transition-opacity duration-300`;
+    alertDiv.innerHTML = `<span class="font-medium">${msg}</span>`;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => { alertDiv.style.opacity = '0'; setTimeout(() => alertDiv.remove(), 300); }, 2500);
   }
 
+  // ---------- Jadval va paginatsiya (tez render) ----------
   function renderTable() {
     const total = items.length;
     const totalPages = Math.ceil(total / ITEMS_PER_PAGE) || 1;
@@ -325,9 +191,12 @@
       return;
     }
 
-    tableBody.innerHTML = pageItems.map((item, idx) => `
-      <tr class="hover:bg-gray-50 border-b border-gray-100">
-        <td class="px-3 py-2 text-xs text-gray-500">${start + idx + 1}</td>
+    let html = '';
+    for (let i = 0; i < pageItems.length; i++) {
+      const item = pageItems[i];
+      const idx = start + i + 1;
+      html += `<tr class="hover:bg-gray-50 border-b border-gray-100">
+        <td class="px-3 py-2 text-xs text-gray-500">${idx}</td>
         <td class="px-3 py-2 text-xs">${getProductTypeBadge(item.productType)}</td>
         <td class="px-3 py-2 text-xs font-semibold">${item.quantity}</td>
         <td class="px-3 py-2 text-xs text-gray-700">${escapeHtml(item.enteredBy || '—')}</td>
@@ -336,8 +205,9 @@
           <button class="edit-item-btn text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs hover:bg-blue-100" data-id="${item._id}">✏️</button>
           <button class="delete-item-btn text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs hover:bg-red-100 ml-1" data-id="${item._id}">🗑️</button>
         </td>
-      </tr>
-    `).join('');
+      </tr>`;
+    }
+    tableBody.innerHTML = html;
   }
 
   function renderPagination() {
@@ -361,44 +231,210 @@
     html+=`<button class="page-btn px-2 py-1 rounded-lg border text-xs ${currentPage===totalPages?'opacity-50 cursor-not-allowed':''}" data-page="next">»</button>`;
     paginationContainer.innerHTML = html;
 
+    // Event listenerlarni biriktirish (optimallashtirilgan)
     paginationContainer.querySelectorAll('[data-page]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const p = btn.dataset.page;
         const tp = Math.ceil(items.length/ITEMS_PER_PAGE)||1;
-        if (p==='prev'&&currentPage>1) currentPage--;
-        else if (p==='next'&&currentPage<tp) currentPage++;
+        if (p==='prev' && currentPage>1) currentPage--;
+        else if (p==='next' && currentPage<tp) currentPage++;
         else { const n=parseInt(p); if(!isNaN(n)&&n>=1&&n<=tp) currentPage=n; }
-        renderAll();
+        renderTable();
+        renderPagination();
       });
     });
   }
 
   function renderAll() { renderTable(); renderPagination(); }
 
-  function showTemporaryMessage(msg, color='green') {
-    const toast = document.createElement('div');
-    toast.className = `fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-4 py-2 rounded-full text-xs shadow-lg z-50`;
-    toast.innerText = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => { toast.style.opacity='0'; setTimeout(()=>toast.remove(),300); }, 2000);
+  // ---------- Serverga so‘rov (optimistik UI bilan) ----------
+  async function loadItemsFromServer() {
+    try {
+      const res = await fetch('/api/productmanager');
+      if (!res.ok) throw new Error('Load failed');
+      items = await res.json();
+      renderAll();
+    } catch (err) {
+      console.error(err);
+      showTopAlert('⚠️ Maʼlumotlarni yuklashda xatolik', 'red');
+    }
   }
 
-  function showTopAlert(msg, color='green') {
-    const alert = document.createElement('div');
-    alert.className = `fixed top-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-6 py-3 rounded-lg text-sm shadow-lg z-50 border-l-4 border-${color}-700`;
-    alert.innerHTML = `<span class="font-medium">${msg}</span>`;
-    document.body.appendChild(alert);
-    setTimeout(() => { alert.style.opacity='0'; setTimeout(()=>alert.remove(),300); }, 3000);
+  // Optimistik qo‘shish
+  async function optimisticAdd(item) {
+    const tempId = 'temp_' + Date.now() + '_' + Math.random();
+    const newItem = { ...item, _id: tempId, createdAt: new Date().toISOString() };
+    items.unshift(newItem);
+    renderAll();
+    // Sahifani eng yuqoriga (yangi element ko‘rinishi uchun)
+    if (currentPage !== 1) { currentPage = 1; renderAll(); }
+    try {
+      const res = await fetch('/api/productmanager', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+      if (!res.ok) throw new Error('Server error');
+      const saved = await res.json();
+      // Vaqtinchalik ID ni haqiqiy ID bilan almashtirish
+      const index = items.findIndex(i => i._id === tempId);
+      if (index !== -1) items[index] = saved;
+      renderAll();
+      showTopAlert('✅ Yangi mahsulot qo‘shildi', 'green');
+    } catch (err) {
+      // Xatolik bo‘lsa, vaqtinchalik elementni o‘chirib, qayta yuklaymiz
+      items = items.filter(i => i._id !== tempId);
+      renderAll();
+      showTopAlert('❌ Saqlashda xatolik, qayta urining', 'red');
+      console.error(err);
+    }
   }
 
-  // Notes
+  async function optimisticUpdate(id, updatedItem) {
+    const oldItem = items.find(i => i._id === id);
+    if (!oldItem) return;
+    const oldCopy = { ...oldItem };
+    const index = items.findIndex(i => i._id === id);
+    items[index] = { ...oldItem, ...updatedItem, _id: id };
+    renderAll();
+    try {
+      const res = await fetch(`/api/productmanager/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedItem)
+      });
+      if (!res.ok) throw new Error('Update failed');
+      const saved = await res.json();
+      items[index] = saved;
+      renderAll();
+      showTopAlert('✏️ Mahsulot tahrirlandi', 'blue');
+    } catch (err) {
+      items[index] = oldCopy;
+      renderAll();
+      showTopAlert('❌ Yangilashda xatolik', 'red');
+      console.error(err);
+    }
+  }
+
+  async function optimisticDelete(id) {
+    const index = items.findIndex(i => i._id === id);
+    if (index === -1) return;
+    const removed = items[index];
+    items.splice(index, 1);
+    renderAll();
+    try {
+      const res = await fetch(`/api/productmanager/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      showTopAlert('🗑 Yozuv o‘chirildi', 'orange');
+    } catch (err) {
+      items.splice(index, 0, removed);
+      renderAll();
+      showTopAlert('❌ O‘chirishda xatolik', 'red');
+      console.error(err);
+    }
+  }
+
+  // ---------- Forma va UI logikasi ----------
+  function resetFormToAddMode() {
+    editingId = null;
+    quantityInput.value = '';
+    nameInput.value = '';
+    submitBtn.innerHTML = '✨ Qo\'shish';
+    submitBtn.classList.remove('bg-emerald-600','hover:bg-emerald-700');
+    submitBtn.classList.add('bg-blue-600','hover:bg-blue-700');
+    cancelEditBtn.classList.add('hidden');
+    formTitleSpan.innerHTML = '➕ Yangi mahsulot qo\'shish';
+  }
+
+  function startEditItem(id) {
+    const item = items.find(i => i._id === id);
+    if (!item) return;
+    editingId = id;
+    productTypeSelect.value = item.productType;
+    quantityInput.value = item.quantity;
+    nameInput.value = item.enteredBy || '';
+    submitBtn.innerHTML = '✏️ Yangilash';
+    submitBtn.classList.remove('bg-blue-600','hover:bg-blue-700');
+    submitBtn.classList.add('bg-emerald-600','hover:bg-emerald-700');
+    cancelEditBtn.classList.remove('hidden');
+    formTitleSpan.innerHTML = `✏️ Tahrirlash (ID: ${item._id.toString().slice(-6)})`;
+    document.querySelector('.ios-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Validatsiya va yuborish (debounced)
+  let submitInProgress = false;
+  async function handleSubmit() {
+    if (submitInProgress) return;
+    const productType = productTypeSelect.value;
+    const quantity = parseInt(quantityInput.value.trim(), 10);
+    const enteredBy = nameInput.value.trim();
+    if (isNaN(quantity) || quantity <= 0) {
+      quantityInput.classList.add('heartbeat');
+      setTimeout(() => quantityInput.classList.remove('heartbeat'), 1000);
+      return;
+    }
+    if (!enteredBy) {
+      nameInput.classList.add('heartbeat');
+      setTimeout(() => nameInput.classList.remove('heartbeat'), 1000);
+      return;
+    }
+    quantityInput.classList.remove('heartbeat');
+    nameInput.classList.remove('heartbeat');
+
+    submitInProgress = true;
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loader"></span> Saqlanmoqda...';
+
+    try {
+      if (editingId) {
+        await optimisticUpdate(editingId, { productType, quantity, enteredBy });
+        resetFormToAddMode();
+      } else {
+        await optimisticAdd({ productType, quantity, enteredBy });
+        resetFormToAddMode();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      submitInProgress = false;
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  }
+
+  // ---------- Namuna yaratish (optimistik) ----------
+  async function generateSampleData() {
+    if (generateSampleBtn.disabled) return;
+    generateSampleBtn.disabled = true;
+    const originalBtnText = generateSampleBtn.innerHTML;
+    generateSampleBtn.innerHTML = '<span class="loader"></span> Qo\'shilmoqda...';
+    try {
+      for (let i = 1; i <= 25; i++) {
+        const productType = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
+        const quantity = Math.floor(Math.random() * 200) + 1;
+        await optimisticAdd({ productType, quantity, enteredBy: 'Namuna' });
+        // Kichik pauza serverni haddan tashqari bosmaslik uchun (ixtiyoriy)
+        if (i % 5 === 0) await new Promise(r => setTimeout(r, 30));
+      }
+      showTopAlert('25 ta namuna qo‘shildi', 'green');
+    } catch (err) {
+      showTopAlert('Namuna yaratishda xatolik', 'red');
+    } finally {
+      generateSampleBtn.disabled = false;
+      generateSampleBtn.innerHTML = originalBtnText;
+    }
+  }
+
+  // ---------- Eslatmalar (hech qanday o‘zgarishsiz, faqat tezlik uchun event delegation) ----------
   function loadNotes() {
     const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
     savedNotes.innerHTML = notes.map((n,i) => `
       <div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between items-center">
         <span>${escapeHtml(n.text)}</span>
         <small class="text-gray-500">${new Date(n.date).toLocaleString('uz-UZ')}</small>
-        <button onclick="deleteNote(${i})" class="text-red-500 ml-2">✖</button>
+        <button onclick="window.deleteNote(${i})" class="text-red-500 ml-2">✖</button>
       </div>`).join('');
   }
   function saveNote(text) {
@@ -407,72 +443,28 @@
     localStorage.setItem('inputNotes', JSON.stringify(notes));
     loadNotes();
   }
-  function deleteNote(i) {
+  window.deleteNote = (i) => {
     const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
     notes.splice(i,1);
     localStorage.setItem('inputNotes', JSON.stringify(notes));
     loadNotes();
-  }
-  window.deleteNote = deleteNote;
+  };
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-  }
-
+  // ---------- Event larni biriktirish (optimallashtirilgan) ----------
   function bindEvents() {
-    // ✅ Submit — bir marta bind, disable bilan ikki marta bosishdan himoya
-    submitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (submitBtn.disabled) return;
-      setButtonLoading(true);
-      try {
-        if (editingId) await updateItem();
-        else await addItem();
-      } finally {
-        // setButtonLoading false addItem/updateItem ichida chaqiriladi,
-        // lekin xatolik bo'lsa ham chiqishi uchun bu yerda ham qo'yamiz
-        if (submitBtn.disabled) setButtonLoading(false);
-      }
-    });
-
-    cancelEditBtn.addEventListener('click', () => {
-      resetFormToAddMode();
-      showTopAlert('Tahrirlash bekor qilindi', 'gray');
-    });
-
-    // ✅ FIX 4: generateSampleBtn — faqat bir marta bind, disabled bilan
-    generateSampleBtn.addEventListener('click', async () => {
-      if (generateSampleBtn.disabled) return;
-      generateSampleBtn.disabled = true;
-      generateSampleBtn.innerHTML = '<span class="loader"></span> Qo\'shilmoqda...';
-      try {
-        await generateSampleData();
-      } finally {
-        generateSampleBtn.disabled = false;
-        generateSampleBtn.innerHTML = '📋 Namuna (25 ta)';
-      }
-    });
-
-    // ✅ FIX 4: Event delegation — dinamik edit/delete tugmalari uchun
+    submitBtn.addEventListener('click', (e) => { e.preventDefault(); handleSubmit(); });
+    cancelEditBtn.addEventListener('click', () => { resetFormToAddMode(); showTopAlert('Tahrirlash bekor qilindi', 'gray'); });
+    generateSampleBtn.addEventListener('click', (e) => { e.preventDefault(); generateSampleData(); });
     tableBody.addEventListener('click', (e) => {
       const editBtn   = e.target.closest('.edit-item-btn');
       const deleteBtn = e.target.closest('.delete-item-btn');
       if (editBtn)   startEditItem(editBtn.dataset.id);
-      if (deleteBtn) deleteItemById(deleteBtn.dataset.id);
+      if (deleteBtn) optimisticDelete(deleteBtn.dataset.id);
     });
+    quantityInput.addEventListener('input', () => quantityInput.classList.remove('heartbeat'));
+    nameInput.addEventListener('input', () => nameInput.classList.remove('heartbeat'));
 
-    // Quantity input — heartbeat o'chirish
-    quantityInput.addEventListener('input', () => {
-      quantityInput.classList.remove('heartbeat');
-    });
-
-    // Name input — heartbeat o'chirish
-    nameInput.addEventListener('input', () => {
-      nameInput.classList.remove('heartbeat');
-    });
-
-    // Note events
+    // Eslatmalar
     noteBtn.addEventListener('click', () => { noteModal.classList.remove('hidden'); loadNotes(); });
     closeNoteModal.addEventListener('click', () => noteModal.classList.add('hidden'));
     saveNoteBtn.addEventListener('click', () => {
@@ -483,17 +475,15 @@
       localStorage.removeItem('inputNotes');
       loadNotes();
     });
-    window.addEventListener('click', (e) => {
-      if (e.target === noteModal) noteModal.classList.add('hidden');
-    });
+    window.addEventListener('click', (e) => { if (e.target === noteModal) noteModal.classList.add('hidden'); });
   }
 
-  function init() {
-    fetchItems();
+  // ---------- Boshlash ----------
+  async function init() {
+    await loadItemsFromServer();
     bindEvents();
     resetFormToAddMode();
   }
-
   init();
 </script>
 </body>
