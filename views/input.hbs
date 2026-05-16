@@ -64,7 +64,6 @@
     <p class="text-gray-500 text-sm mt-1">1–18 band, Upakovka, Dazmol — to'liq boshqaruv</p>
     <div class="flex gap-3 mt-4">
       <button id="noteBtn" class="ios-button bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-yellow-100">📝 Eslatma</button>
-      <button id="generateSampleBtn" class="ios-button bg-indigo-50 border border-indigo-200 text-indigo-600 px-4 py-2 text-sm font-medium shadow-sm hover:bg-indigo-100">📋 Namuna (25 ta)</button>
     </div>
   </div>
 
@@ -171,7 +170,6 @@
   const totalCountSpan    = document.getElementById('totalCountSpan');
   const pageInfoSpan      = document.getElementById('pageInfo');
   const totalPagesSpan    = document.getElementById('totalPagesSpan');
-  const generateSampleBtn = document.getElementById('generateSampleBtn');
   const noteBtn           = document.getElementById('noteBtn');
   const noteModal         = document.getElementById('noteModal');
   const closeNoteModal    = document.getElementById('closeNoteModal');
@@ -219,7 +217,7 @@
   styleSheet.textContent = `@keyframes fadeOut { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } }`;
   document.head.appendChild(styleSheet);
 
-  // Eski showTopAlert saqlab qo‘yiladi (kichik xabarlar uchun), lekin asosiy rahmat uchun markaziy katta ishlatiladi
+  // Eski showTopAlert saqlab qo‘yiladi (kichik xabarlar uchun)
   function showTopAlert(msg, color='green') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `fixed top-5 left-1/2 transform -translate-x-1/2 bg-${color}-500 text-white px-6 py-3 rounded-lg text-sm shadow-lg z-50 border-l-4 border-${color}-700 transition-opacity duration-300`;
@@ -255,7 +253,7 @@
           <button class="edit-item-btn text-blue-600 bg-blue-50 px-2 py-1 rounded-lg text-xs hover:bg-blue-100" data-id="${item._id}">✏️</button>
           <button class="delete-item-btn text-red-600 bg-red-50 px-2 py-1 rounded-lg text-xs hover:bg-red-100 ml-1" data-id="${item._id}">🗑️</button>
         </td>
-      </tr>`;
+       </tr>`;
     }
     tableBody.innerHTML = html;
   }
@@ -455,28 +453,6 @@
     }
   }
 
-  // ---------- Namuna yaratish ----------
-  async function generateSampleData() {
-    if (generateSampleBtn.disabled) return;
-    generateSampleBtn.disabled = true;
-    const originalBtnText = generateSampleBtn.innerHTML;
-    generateSampleBtn.innerHTML = '<span class="loader"></span> Qo\'shilmoqda...';
-    try {
-      for (let i = 1; i <= 25; i++) {
-        const productType = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
-        const quantity = Math.floor(Math.random() * 200) + 1;
-        await optimisticAdd({ productType, quantity, enteredBy: 'Namuna' }, true);
-        if (i % 5 === 0) await new Promise(r => setTimeout(r, 30));
-      }
-      showTopAlert('25 ta namuna qo‘shildi', 'green');
-    } catch (err) {
-      showTopAlert('Namuna yaratishda xatolik', 'red');
-    } finally {
-      generateSampleBtn.disabled = false;
-      generateSampleBtn.innerHTML = originalBtnText;
-    }
-  }
-
   // ---------- Eslatmalar ----------
   function loadNotes() {
     const notes = JSON.parse(localStorage.getItem('inputNotes')||'[]');
@@ -504,7 +480,6 @@
   function bindEvents() {
     submitBtn.addEventListener('click', (e) => { e.preventDefault(); handleSubmit(); });
     cancelEditBtn.addEventListener('click', () => { resetFormToAddMode(); showTopAlert('Tahrirlash bekor qilindi', 'gray'); });
-    generateSampleBtn.addEventListener('click', (e) => { e.preventDefault(); generateSampleData(); });
     tableBody.addEventListener('click', (e) => {
       const editBtn   = e.target.closest('.edit-item-btn');
       const deleteBtn = e.target.closest('.delete-item-btn');
