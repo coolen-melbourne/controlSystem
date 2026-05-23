@@ -150,14 +150,16 @@
     .fullscreen-overlay .stats-card .stat-label { color:rgba(255,250,220,0.9); }
     .fullscreen-overlay .stats-card .stat-value { font-weight:700; color:#ffd966; }
     .fullscreen-overlay .chart-wrapper {
-      position:relative; z-index:2; flex:1; min-height:60vh;
+      position:relative; z-index:2; flex:1; min-height:65vh; max-height:75vh;
       display:flex; align-items:center; justify-content:center;
       margin:1rem 0; background:rgba(0,0,0,0.3); backdrop-filter:blur(8px);
       border-radius:1.5rem; padding:1rem; border:1px solid rgba(255,255,255,0.25);
+      overflow:auto;
     }
     .fullscreen-overlay canvas {
-      width:100%; height:auto; max-width:100%; max-height:70vh;
-      background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem;
+      width:100% !important; height:auto !important; max-width:100%; max-height:70vh;
+      background:rgba(255,255,255,0.85); border-radius:1rem; padding:0.8rem; box-sizing:border-box;
+      object-fit: contain;
     }
     .fullscreen-overlay .close-fullscreen {
       position:fixed; top:1rem; right:1rem;
@@ -631,6 +633,9 @@
 
         const backgroundColors = labels.map(l => getColorAndEmoji(l, dailyTotals[l]||0).color);
         const borderColors = backgroundColors.map(c => c.replace('0.85','1'));
+        const canvasWidth = ctx.canvas.width || 1000;
+        const barThickness = Math.min(40, Math.max(15, (canvasWidth - 100) / (labels.length * 1.5)));
+        const barPercentage = Math.min(0.95, 0.7 + (labels.length < 10 ? 0.2 : 0));
         mainChart = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -642,9 +647,9 @@
               borderColor: borderColors,
               borderWidth: 0.5,
               borderRadius: 3,
-              barPercentage: 0.9,
-              categoryPercentage: 0.95,
-              barThickness: 30
+              barPercentage: barPercentage,
+              categoryPercentage: Math.min(0.95, 0.8 + (labels.length < 10 ? 0.15 : 0)),
+              barThickness: barThickness > 0 ? barThickness : 'flex'
             }]
           },
           options: {
@@ -665,7 +670,7 @@
               legend: { position: 'top' },
               datalabels: {
                 anchor: 'end', align: 'top', offset: 12,
-                color: '#fff', font: { weight:'bold', size:12 },
+                color: '#fff', font: { weight:'bold', size: Math.max(8, Math.min(12, canvasWidth / 100)) },
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 borderRadius: 4, padding: 4,
                 formatter: (value, ctx) => {
@@ -678,7 +683,7 @@
             },
             scales: {
               y: { beginAtZero: true, title: { display:true, text:'Kunlik tikuv (dona)' }, grid: { color:'#e2e8f0' }, ticks: { font: { size:10 } } },
-              x: { title: { display:true, text:'Mahsulot turi' }, ticks: { maxRotation:0, minRotation:0, autoSkip:false, font: { size:10 } }, grid: { display:false } }
+              x: { title: { display:true, text:'Mahsulot turi' }, ticks: { maxRotation:0, minRotation:0, autoSkip:false, font: { size: Math.max(8, Math.min(11, canvasWidth / 120)) } }, grid: { display:false } }
             },
             animation: false
           },
@@ -948,7 +953,6 @@
         const chartWrapper = document.createElement('div');
         chartWrapper.className = 'chart-wrapper';
         const originalParent = chartCanvas.parentNode;
-        chartCanvas.height = 1200;
         await updateFullscreenStats(statsContainer);
         chartWrapper.appendChild(chartCanvas);
         const closeBtn = document.createElement('button');
@@ -964,7 +968,7 @@
         document.body.appendChild(overlay);
         currentFullscreenOverlay = { overlay, chartCanvas, originalParent, chartInstance, statsContainer, marqueeFooter };
         video.play().catch(e=>console.warn('Video autoplay blocked',e));
-        overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:',err)).then(()=>{ setTimeout(()=>{ chartInstance.resize(); chartInstance.update(); },100); });
+        overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:',err)).then(()=>{ setTimeout(()=>{ const rect=chartWrapper.getBoundingClientRect(); chartCanvas.width=Math.max(rect.width-16,800); chartCanvas.height=Math.max(rect.height-16,600); chartInstance.resize(); chartInstance.update(); },150); });
         const fsChangeHandler = () => {
           if (!document.fullscreenElement && currentFullscreenOverlay) {
             const { chartCanvas, originalParent, chartInstance, overlay, marqueeFooter } = currentFullscreenOverlay;
@@ -981,11 +985,23 @@
             currentFullscreenOverlay = null;
             if(overlayStorageListener) window.removeEventListener('storage', overlayStorageListener);
             document.removeEventListener('fullscreenchange', fsChangeHandler);
+            window.removeEventListener('resize', resizeHandler);
           } else if(document.fullscreenElement) {
-            setTimeout(()=>{ chartInstance.resize(); chartInstance.update(); },100);
+            setTimeout(()=>{ if(currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) { const wrapper = currentFullscreenOverlay.chartInstance.canvas.parentElement; const rect=wrapper.getBoundingClientRect(); currentFullscreenOverlay.chartCanvas.width=Math.max(rect.width-16,800); currentFullscreenOverlay.chartCanvas.height=Math.max(rect.height-16,600); currentFullscreenOverlay.chartInstance.resize(); currentFullscreenOverlay.chartInstance.update(); } },150);
+          }
+        };
+        const resizeHandler = () => {
+          if(document.fullscreenElement && currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) {
+            const wrapper = currentFullscreenOverlay.chartInstance.canvas.parentElement;
+            const rect=wrapper.getBoundingClientRect();
+            currentFullscreenOverlay.chartCanvas.width=Math.max(rect.width-16,800);
+            currentFullscreenOverlay.chartCanvas.height=Math.max(rect.height-16,600);
+            currentFullscreenOverlay.chartInstance.resize();
+            currentFullscreenOverlay.chartInstance.update();
           }
         };
         document.addEventListener('fullscreenchange', fsChangeHandler);
+        window.addEventListener('resize', resizeHandler);
       }
 
       // ---------- AI SUMMARY ----------
