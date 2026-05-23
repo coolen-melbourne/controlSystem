@@ -121,24 +121,31 @@ const BAND_TYPES = [
   "16-band","17-band","18-band"
 ];
 
+const statsCache = new Map();
+async function getProductionStats(startDate, endDate, cacheKey = null) {
+  if (cacheKey && statsCache.has(cacheKey)) {
+    const cached = statsCache.get(cacheKey);
+    if (Date.now() - cached.time < 60000) return cached.data;
+  }
+  const result = await ProductManager.aggregate([
+    { $match: { productType: { $in: BAND_TYPES }, createdAt: { $gte: startDate, $lte: endDate } } },
+    { $group: { _id: null, total: { $sum: "$quantity" } } }
+  ]);
+  const data = result[0]?.total || 0;
+  if (cacheKey) statsCache.set(cacheKey, { data, time: Date.now() });
+  return data;
+}
+
 async function getTotalProduction(monthKey = null) {
   const monthStart = monthKey ? moment(monthKey + '-01').startOf('month').toDate() : moment().startOf('month').toDate();
   const monthEnd = monthKey ? moment(monthKey + '-01').endOf('month').toDate() : moment().endOf('month').toDate();
-  const result = await ProductManager.aggregate([
-    { $match: { productType: { $in: BAND_TYPES }, createdAt: { $gte: monthStart, $lte: monthEnd } } },
-    { $group: { _id: null, total: { $sum: "$quantity" } } }
-  ]);
-  return result[0]?.total || 0;
+  return getProductionStats(monthStart, monthEnd, `monthly_${monthKey || moment().format('YYYY-MM')}`);
 }
 
 async function getDailyProduction() {
   const todayStart = moment().startOf('day').toDate();
   const todayEnd = moment().endOf('day').toDate();
-  const result = await ProductManager.aggregate([
-    { $match: { productType: { $in: BAND_TYPES }, createdAt: { $gte: todayStart, $lte: todayEnd } } },
-    { $group: { _id: null, total: { $sum: "$quantity" } } }
-  ]);
-  return result[0]?.total || 0;
+  return getProductionStats(todayStart, todayEnd, `daily_${moment().format('YYYY-MM-DD')}`);
 }
 
 // -------------------- Telegram Helper --------------------
@@ -363,46 +370,53 @@ async function sendBandSelectionKeyboard(chatId) {
 }
 
 // -------------------- Bot funksiyalari --------------------
+async function buildStatsData() {
+  const monthStart = moment().startOf('month').toDate();
+  const monthEnd = moment().endOf('month').toDate();
+  const todayStart = moment().startOf('day').toDate();
+  const todayEnd = moment().endOf('day').toDate();
+  const todayStr = moment().format('YYYY-MM-DD');
+
+  const [allProducts, monthProducts, totalIncoming, totalExpense, expenseAgg, totalStaff, attendances, machinesCount, accessoriesCount] = await Promise.all([
+    ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } }).lean(),
+    ProductManager.find({ productType: { $in: BAND_TYPES }, createdAt: { $gte: monthStart, $lte: monthEnd } }).lean(),
+    IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+    Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+    Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+    Staff.countDocuments(),
+    Attendance.find({ date: todayStr }).lean(),
+    Machine.countDocuments(),
+    Accessory.countDocuments()
+  ]);
+
+  const monthlyBandStats = Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
+  monthProducts.forEach(p => { if (BAND_TYPES.includes(p.productType)) monthlyBandStats[p.productType] += p.quantity; });
+
+  let topBand = '—', topQty = 0;
+  for (const [band, qty] of Object.entries(monthlyBandStats)) {
+    if (qty > topQty) { topBand = band; topQty = qty; }
+  }
+
+  const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((s,p)=>s+p.quantity,0);
+  const totalOverall = await getTotalProduction();
+  const upakovkaMonth = monthProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
+  const dazmolMonth = monthProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
+  const incomingTotal = totalIncoming[0]?.total || 0;
+  const expenseTotal = totalExpense[0]?.total || 0;
+  const expenseToday = expenseAgg[0]?.total || 0;
+  const presentCount = attendances.filter(a=>a.checkIn).length;
+  const lateCount = attendances.filter(a=>a.checkIn&&a.lateMinutes>0).length;
+
+  return {
+    totalToday, totalOverall, topBand, topQty, upakovkaMonth, dazmolMonth,
+    incomingTotal, expenseTotal, expenseToday, totalStaff, presentCount, lateCount,
+    machinesCount, accessoriesCount, monthlyBandStats
+  };
+}
+
 async function sendFullStatsToChat(chatId) {
   try {
-    const monthStart = moment().startOf('month').toDate();
-    const monthEnd = moment().endOf('month').toDate();
-    const todayStart = moment().startOf('day').toDate();
-    const todayEnd = moment().endOf('day').toDate();
-    const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
-    const monthProducts = await ProductManager.find({
-      productType: { $in: BAND_TYPES },
-      createdAt: { $gte: monthStart, $lte: monthEnd }
-    });
-    const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
-    const totalOverall = await getTotalProduction();
-    const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
-    const monthlyBandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
-    allProducts.forEach(p => {
-      if (BAND_TYPES.includes(p.productType)) {
-        bandStats[p.productType] += p.quantity;
-      }
-    });
-    monthProducts.forEach(p => {
-      if (BAND_TYPES.includes(p.productType)) {
-        monthlyBandStats[p.productType] += p.quantity;
-      }
-    });
-    let topBand = '—', topQty = 0;
-    for (const [band, qty] of Object.entries(monthlyBandStats)) {
-      if (qty > topQty) { topBand = band; topQty = qty; }
-    }
-    const upakovkaMonth = monthProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
-    const dazmolMonth = monthProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
-    const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const totalExpense = (await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const expenseToday = (await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const totalStaff = await Staff.countDocuments();
-    const attendances = await Attendance.find({ date: moment().format("YYYY-MM-DD") });
-    const presentCount = attendances.filter(a=>a.checkIn).length;
-    const lateCount = attendances.filter(a=>a.checkIn&&a.lateMinutes>0).length;
-    const machinesCount = await Machine.countDocuments();
-    const accessoriesCount = await Accessory.countDocuments();
+    const stats = await buildStatsData();
 
     const bandLines = BAND_TYPES.map(band => {
       const qty = monthlyBandStats[band] || 0;
@@ -471,52 +485,20 @@ ${bandLines}
 
 async function sendAISummaryOnly(chatId) {
   try {
-    const monthStart = moment().startOf('month').toDate();
-    const monthEnd = moment().endOf('month').toDate();
-    const todayStart = moment().startOf('day').toDate();
-    const todayEnd = moment().endOf('day').toDate();
-    const allProducts = await ProductManager.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
-    const monthProducts = await ProductManager.find({
-      productType: { $in: BAND_TYPES },
-      createdAt: { $gte: monthStart, $lte: monthEnd }
-    });
-    const totalToday = allProducts.filter(p => BAND_TYPES.includes(p.productType)).reduce((sum,p)=>sum+p.quantity,0);
-    const totalOverall = await getTotalProduction();
-    const bandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
-    const monthlyBandStats = Object.fromEntries(BAND_TYPES.map(band => [band, 0]));
-    allProducts.forEach(p => {
-      if (BAND_TYPES.includes(p.productType)) {
-        bandStats[p.productType] += p.quantity;
-      }
-    });
-    monthProducts.forEach(p => {
-      if (BAND_TYPES.includes(p.productType)) {
-        monthlyBandStats[p.productType] += p.quantity;
-      }
-    });
-    let topBand = '—', topQty = 0;
-    for (const [band, qty] of Object.entries(monthlyBandStats)) {
-      if (qty > topQty) { topBand = band; topQty = qty; }
-    }
-    const upakovkaMonth = monthProducts.filter(p=>p.productType==='Upakovka').reduce((s,p)=>s+p.quantity,0);
-    const dazmolMonth = monthProducts.filter(p=>p.productType==='Dazmol').reduce((s,p)=>s+p.quantity,0);
-    const totalIncoming = (await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const totalExpense = (await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const expenseToday = (await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const accessoriesCount = await Accessory.countDocuments();
-    const zeroBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) === 0);
-    const belowPlanBands = BAND_TYPES.filter(band => (monthlyBandStats[band] || 0) < 1000);
+    const stats = await buildStatsData();
+    const zeroBands = BAND_TYPES.filter(band => (stats.monthlyBandStats[band] || 0) === 0);
+    const belowPlanBands = BAND_TYPES.filter(band => (stats.monthlyBandStats[band] || 0) < 1000);
 
     const summaryText = await buildAITextSummary({
-      totalToday,
-      totalOverall,
-      topBand,
-      topQty,
-      upakovkaMonth,
-      dazmolMonth,
-      availableWork: totalIncoming - totalExpense,
-      expenseToday,
-      accessoriesCount,
+      totalToday: stats.totalToday,
+      totalOverall: stats.totalOverall,
+      topBand: stats.topBand,
+      topQty: stats.topQty,
+      upakovkaMonth: stats.upakovkaMonth,
+      dazmolMonth: stats.dazmolMonth,
+      availableWork: stats.incomingTotal - stats.expenseTotal,
+      expenseToday: stats.expenseToday,
+      accessoriesCount: stats.accessoriesCount,
       zeroBands,
       belowPlanBands
     });
@@ -545,68 +527,48 @@ async function sendDailyTotalStats(chatId) {
   }
 }
 
-async function sendIncomingList(chatId, page=0, editMessageId=null) {
+// Helper function for generic pagination
+async function sendPaginatedList(chatId, page, collection, titleTemplate, formatItem, callbackPrefix, editMessageId=null) {
   const limit=5, skip=page*limit;
-  const total=await IncomingProduct.countDocuments();
-  const items=await IncomingProduct.find().sort({date:-1}).skip(skip).limit(limit);
+  const total=await collection.countDocuments();
+  const items=await collection.find().sort({date:-1}).skip(skip).limit(limit).lean();
   if (!items.length) {
-    const text="📭 Hech qanday kirim mahsuloti topilmadi.";
+    const text=`📭 ${titleTemplate.empty}`;
     if (editMessageId&&bot) await bot.editMessageText(text,{chat_id:chatId,message_id:editMessageId});
     else await sendTelegramMessage(text,chatId);
     return;
   }
-  let msg=`📥 <b>Kroy kirim (sahifa ${page+1}/${Math.ceil(total/limit)})</b>\n\n`;
-  items.forEach((item,idx)=>{msg+=`${skip+idx+1}. <b>${escapeHtml(item.modelName)}</b> (${escapeHtml(item.variant||'—')})\n   🏷️ Zakaz: ${escapeHtml(item.orderNumber||'—')} | 🔢 ${item.quantity} dona\n   📅 ${moment(item.date).format("DD.MM.YYYY HH:mm")}\n\n`;});
+  let msg=`${titleTemplate.title(page, limit, total)}\n\n`;
+  items.forEach((item,idx)=>{ msg+=formatItem(item, skip+idx+1); });
   const kb={inline_keyboard:[]};
-  if (page>0) kb.inline_keyboard.push([{text:"◀️ Oldingi",callback_data:`kroy_page_${page-1}`}]);
-  if ((page+1)*limit<total) kb.inline_keyboard.push([{text:"Keyingi ▶️",callback_data:`kroy_page_${page+1}`}]);
+  if (page>0) kb.inline_keyboard.push([{text:"◀️ Oldingi",callback_data:`${callbackPrefix}_page_${page-1}`}]);
+  if ((page+1)*limit<total) kb.inline_keyboard.push([{text:"Keyingi ▶️",callback_data:`${callbackPrefix}_page_${page+1}`}]);
   const opts={parse_mode:"HTML",...(kb.inline_keyboard.length?{reply_markup:kb}:{})};
   if (editMessageId&&bot) await bot.editMessageText(msg,{chat_id:chatId,message_id:editMessageId,...opts});
   else if (bot) await bot.sendMessage(chatId,msg,opts);
   else await sendTelegramMessage(msg,chatId);
+}
+
+async function sendIncomingList(chatId, page=0, editMessageId=null) {
+  await sendPaginatedList(chatId, page, IncomingProduct, 
+    { title: (p, l, t) => `📥 <b>Kroy kirim (sahifa ${p+1}/${Math.ceil(t/l)})</b>`, empty: "Hech qanday kirim topilmadi." },
+    (item, idx) => `${idx}. <b>${escapeHtml(item.modelName)}</b> (${escapeHtml(item.variant||'—')})\n   🏷️ Zakaz: ${escapeHtml(item.orderNumber||'—')} | 🔢 ${item.quantity} dona\n   📅 ${moment(item.date).format("DD.MM.YYYY HH:mm")}\n\n`,
+    'kroy_page', editMessageId);
 }
 
 async function sendExpenseList(chatId, page=0, editMessageId=null) {
-  const limit=5, skip=page*limit;
-  const total=await Expense.countDocuments();
-  const items=await Expense.find().sort({date:-1}).skip(skip).limit(limit);
-  if (!items.length) {
-    const text="📭 Hech qanday chiqim topilmadi.";
-    if (editMessageId&&bot) await bot.editMessageText(text,{chat_id:chatId,message_id:editMessageId});
-    else await sendTelegramMessage(text,chatId);
-    return;
-  }
-  let msg=`📤 <b>Kroy chiqimlar (sahifa ${page+1}/${Math.ceil(total/limit)})</b>\n\n`;
-  items.forEach((item,idx)=>{msg+=`${skip+idx+1}. <b>${escapeHtml(item.modelName)}</b> (${escapeHtml(item.variant||'—')})\n   🎚️ Band: ${escapeHtml(item.band||'—')} | 🔢 ${item.quantity} dona\n   📅 ${moment(item.date).format("DD.MM.YYYY HH:mm")}\n\n`;});
-  const kb={inline_keyboard:[]};
-  if (page>0) kb.inline_keyboard.push([{text:"◀️ Oldingi",callback_data:`chiqim_page_${page-1}`}]);
-  if ((page+1)*limit<total) kb.inline_keyboard.push([{text:"Keyingi ▶️",callback_data:`chiqim_page_${page+1}`}]);
-  const opts={parse_mode:"HTML",...(kb.inline_keyboard.length?{reply_markup:kb}:{})};
-  if (editMessageId&&bot) await bot.editMessageText(msg,{chat_id:chatId,message_id:editMessageId,...opts});
-  else if (bot) await bot.sendMessage(chatId,msg,opts);
-  else await sendTelegramMessage(msg,chatId);
+  await sendPaginatedList(chatId, page, Expense,
+    { title: (p, l, t) => `📤 <b>Kroy chiqimlar (sahifa ${p+1}/${Math.ceil(t/l)})</b>`, empty: "Hech qanday chiqim topilmadi." },
+    (item, idx) => `${idx}. <b>${escapeHtml(item.modelName)}</b> (${escapeHtml(item.variant||'—')})\n   🎚️ Band: ${escapeHtml(item.band||'—')} | 🔢 ${item.quantity} dona\n   📅 ${moment(item.date).format("DD.MM.YYYY HH:mm")}\n\n`,
+    'chiqim_page', editMessageId);
 }
 
 async function sendStaffList(chatId, page=0, editMessageId=null) {
-  const limit=5, skip=page*limit;
-  const total=await Staff.countDocuments();
-  const items=await Staff.find().skip(skip).limit(limit);
-  if (!items.length) {
-    const text="👥 Hech qanday xodim topilmadi.";
-    if (editMessageId&&bot) await bot.editMessageText(text,{chat_id:chatId,message_id:editMessageId});
-    else await sendTelegramMessage(text,chatId);
-    return;
-  }
   const roleMap={band:"Band ishchisi",upakovka:"Upakovka",dazmol:"Dazmol",general:"Umumiy"};
-  let msg=`👥 <b>Xodimlar (sahifa ${page+1}/${Math.ceil(total/limit)})</b>\n\n`;
-  items.forEach((item,idx)=>{msg+=`${skip+idx+1}. <b>${escapeHtml(item.fullName)}</b> – ${roleMap[item.role]||item.role}\n   ${item.bandNumber?`🎚️ Band: ${item.bandNumber} | `:''}📞 ${item.phone||'—'}\n   📅 ${item.hireDate?moment(item.hireDate).format("DD.MM.YYYY"):'—'}\n\n`;});
-  const kb={inline_keyboard:[]};
-  if (page>0) kb.inline_keyboard.push([{text:"◀️ Oldingi",callback_data:`kadrlar_page_${page-1}`}]);
-  if ((page+1)*limit<total) kb.inline_keyboard.push([{text:"Keyingi ▶️",callback_data:`kadrlar_page_${page+1}`}]);
-  const opts={parse_mode:"HTML",...(kb.inline_keyboard.length?{reply_markup:kb}:{})};
-  if (editMessageId&&bot) await bot.editMessageText(msg,{chat_id:chatId,message_id:editMessageId,...opts});
-  else if (bot) await bot.sendMessage(chatId,msg,opts);
-  else await sendTelegramMessage(msg,chatId);
+  await sendPaginatedList(chatId, page, Staff,
+    { title: (p, l, t) => `👥 <b>Xodimlar (sahifa ${p+1}/${Math.ceil(t/l)})</b>`, empty: "Hech qanday xodim topilmadi." },
+    (item, idx) => `${idx}. <b>${escapeHtml(item.fullName)}</b> – ${roleMap[item.role]||item.role}\n   ${item.bandNumber?`🎚️ Band: ${item.bandNumber} | `:''}📞 ${item.phone||'—'}\n   📅 ${item.hireDate?moment(item.hireDate).format("DD.MM.YYYY"):'—'}\n\n`,
+    'kadrlar_page', editMessageId);
 }
 
 async function sendMachinesList(chatId) {
@@ -692,9 +654,18 @@ async function sendHourlyStats() {
 }
 
 // -------------------- Middleware --------------------
+const https = require("https");
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use((req, res, next) => {
+  res.header("X-Content-Type-Options", "nosniff");
+  res.header("X-Frame-Options", "DENY");
+  next();
+});
+
 app.set("view engine", "hbs");
 app.set("views", path.join(__dirname, "views"));
 hbs.registerPartials(path.join(__dirname, "views/partials"));
@@ -715,9 +686,9 @@ app.post("/api/productmanager", async (req, res) => {
   try {
     const item = new ProductManager(req.body);
     await item.save();
-    // ✅ FIX 3: To'liq va aniq Telegram xabari
+    statsCache.clear();
     sendTelegramMessage(
-      `✅ Yangi mahsulot qo'shildi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n� Kiritgan: <b>${escapeHtml(item.enteredBy)}</b>\n�📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
+      `✅ Yangi mahsulot qo'shildi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n👤 Kiritgan: <b>${escapeHtml(item.enteredBy)}</b>\n📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
     ).catch(err => console.warn('TG xato:', err.message));
     res.json(item);
   } catch (err) {
@@ -729,6 +700,7 @@ app.post("/api/productmanager", async (req, res) => {
 app.put("/api/productmanager/:id", async (req, res) => {
   const item = await ProductManager.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (item) {
+    statsCache.clear();
     sendTelegramMessage(
       `✏️ Mahsulot tahrirlandi:\n📦 Turi: <b>${escapeHtml(item.productType)}</b>\n🔢 Miqdori: <b>${item.quantity}</b> dona\n👤 Kiritgan: <b>${escapeHtml(item.enteredBy)}</b>\n📅 Vaqt: ${moment(item.createdAt).format("DD.MM.YYYY HH:mm")}`
     ).catch(err => console.warn('TG xato:', err.message));
@@ -738,6 +710,7 @@ app.put("/api/productmanager/:id", async (req, res) => {
 
 app.delete("/api/productmanager/:id", async (req, res) => {
   await ProductManager.findByIdAndDelete(req.params.id);
+  statsCache.clear();
   res.json({ success: true });
 });
 
@@ -924,25 +897,33 @@ app.delete("/api/accessories/:id", async (req, res) => {
 app.get("/api/stats/today", async (req, res) => {
   try {
     const todayStart=moment().startOf("day").toDate(), todayEnd=moment().endOf("day").toDate();
-    const pmToday=await ProductManager.aggregate([{$match:{createdAt:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:"$productType",total:{$sum:"$quantity"}}}]);
+    const todayStr=moment().format("YYYY-MM-DD");
+    
+    const [pmToday, bandTotals, upakovka, dazmol, incomingAgg, expenseAgg, expenseToday, accessoriesCount, totalStaff, attendances, machinesCount] = await Promise.all([
+      ProductManager.aggregate([{$match:{createdAt:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:"$productType",total:{$sum:"$quantity"}}}]),
+      ProductManager.aggregate([{$match:{productType:{$regex:/^[0-9]+-band$/}}},{$group:{_id:"$productType",total:{$sum:"$quantity"}}}]),
+      ProductManager.aggregate([{$match:{productType:"Upakovka",createdAt:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+      ProductManager.aggregate([{$match:{productType:"Dazmol",createdAt:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+      IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+      Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+      Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]),
+      Accessory.countDocuments(),
+      Staff.countDocuments(),
+      Attendance.find({date:todayStr}).lean(),
+      Machine.countDocuments()
+    ]);
+
     const todayTotals={}; pmToday.forEach(g=>{todayTotals[g._id]=g.total;});
-    const bandTotals=await ProductManager.aggregate([{$match:{productType:{$regex:/^[0-9]+-band$/}}},{$group:{_id:"$productType",total:{$sum:"$quantity"}}}]);
     const bandTotalsObj={}; bandTotals.forEach(b=>{bandTotalsObj[b._id]=b.total;});
     let topBand=null,topQty=0;
     for(const[band,qty]of Object.entries(bandTotalsObj))if(qty>topQty){topBand=band;topQty=qty;}
-    const upakovkaTotal=(await ProductManager.aggregate([{$match:{productType:"Upakovka"}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const dazmolTotal=(await ProductManager.aggregate([{$match:{productType:"Dazmol"}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const totalIncoming=(await IncomingProduct.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const totalExpense=(await Expense.aggregate([{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const expenseToday=(await Expense.aggregate([{$match:{date:{$gte:todayStart,$lte:todayEnd}}},{$group:{_id:null,total:{$sum:"$quantity"}}}]))[0]?.total||0;
-    const accessoriesCount=await Accessory.countDocuments();
-    const totalStaff=await Staff.countDocuments();
-    const todayStr=moment().format("YYYY-MM-DD");
-    const attendances=await Attendance.find({date:todayStr}).populate("employeeId");
+    
     const presentCount=attendances.filter(a=>a.checkIn).length;
     const lateCount=attendances.filter(a=>a.checkIn&&a.lateMinutes>0).length;
-    const machinesCount=await Machine.countDocuments();
-    res.json({ todayTotals, upakovkaTotal, dazmolTotal, topBand, topBandQty:topQty, availableWork:totalIncoming-totalExpense, expenseToday, accessoriesCount, totalStaff, presentCount, absentCount:totalStaff-presentCount, lateCount, machinesCount });
+    const totalIncoming=incomingAgg[0]?.total||0;
+    const totalExpense=expenseAgg[0]?.total||0;
+    
+    res.json({ todayTotals, upakovkaTotal:upakovka[0]?.total||0, dazmolTotal:dazmol[0]?.total||0, topBand, topBandQty:topQty, availableWork:totalIncoming-totalExpense, expenseToday:expenseToday[0]?.total||0, accessoriesCount, totalStaff, presentCount, absentCount:totalStaff-presentCount, lateCount, machinesCount });
   } catch(err){ console.error("Stats error:",err); res.status(500).json({error:"Server error"}); }
 });
 
@@ -1058,6 +1039,7 @@ cron.schedule("0 18 * * *", async () => {
 });
 
 // -------------------- Socket.IO --------------------
+const MAX_NOTES = 500;
 let notes = [];
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
@@ -1065,6 +1047,7 @@ io.on("connection", (socket) => {
   socket.on("new-note", (note) => {
     const newNote = { id: Date.now(), text: note.text||"", date: new Date().toLocaleString("uz-UZ") };
     notes.unshift(newNote);
+    if (notes.length > MAX_NOTES) notes.pop();
     io.emit("note-added", newNote);
   });
   socket.on("voice-chunk", (audioData) => socket.broadcast.emit("audio-stream", audioData));
@@ -1074,7 +1057,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => console.log("Client disconnected"));
 });
 
-// -------------------- Announcements --------------------
+// -------------------- Announcements with proper cleanup --------------------
 function sendAnnouncement(type, data={}) { io.emit("announcement", { type, ...data }); }
 cron.schedule("50 7 * * *", () => sendAnnouncement("warning", { message: "Ish boshlanishiga 10 daqiqa qoldi!" }));
 cron.schedule("55 7 * * *", () => sendAnnouncement("warning", { message: "Ish boshlanishiga 5 daqiqa qoldi!" }));
@@ -1083,7 +1066,7 @@ cron.schedule("0 12 * * *", () => sendAnnouncement("metro", { duration: 1000 }))
 cron.schedule("0 13 * * *", () => sendAnnouncement("metro", { duration: 1000 }));
 cron.schedule("0 18 * * *", () => {
   let count=0;
-  const interval=setInterval(()=>{ sendAnnouncement("metro",{duration:500}); if(++count>=12)clearInterval(interval); }, 5000);
+  const interval=setInterval(()=>{ sendAnnouncement("metro",{duration:500}); if(++count>=12){ clearInterval(interval); } }, 5000);
 });
 
 // -------------------- Google TTS --------------------
