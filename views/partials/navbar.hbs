@@ -324,9 +324,9 @@
         }
 
         // 17:55 — ish tugashiga 5 daqiqa qoldi (15 marta)
-        const preEvening = new Date(today + ' 17:55:00');
+        const preEvening = new Date(today + ' 18:10:00');
         if (now < preEvening) {
-            setTimeout(() => playSound(15), preEvening - now);
+            setTimeout(() => playSound(1), preEvening - now);
         }
 
         // 18:00 — ish tugadi (5 marta)
