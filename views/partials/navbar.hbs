@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" integrity="sha512-hZB4mZgRfb83Av4G2Mq2/vL0DdRuE+Xj2btDbo5RutMDw3ZzQGwmybL1j1aWYNDsBfFEduY3S7+veMSKixnJIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" integrity="sha512-iuqkISYrA9A2qZcXa/Ef25FOF6Jy6p8ChyrnTKbC2wQd75d34bdD+TJ+38t8SIHh7fYMSYy9YrC8EtVxUCyrFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <title>BestTex Admin</title>
     <style>
         /* Loader animatsiyalari butunlay olib tashlandi */
@@ -89,9 +91,17 @@
             .sidebar-link { padding: 1rem; font-size: 1rem; }
             .nav-btn-desktop { padding: 0.5rem 1rem; font-size: 0.75rem; }
         }
+        /* Scroll reveal / entrance animations (global) */
+        .sr-item { opacity: 0; transform: translateY(20px); transition: opacity var(--sr-duration,800ms) cubic-bezier(0.22, 1, 0.36, 1) var(--sr-delay,0ms), transform var(--sr-duration,800ms) cubic-bezier(0.22, 1, 0.36, 1) var(--sr-delay,0ms); will-change: opacity, transform; }
+        .sr-in { opacity: 1; transform: none; }
+        .sr-fade-up { transform: translateY(22px); }
+        .sr-fade-left { transform: translateX(20px); }
+        .sr-fade-right { transform: translateX(-20px); }
+        [data-sr] { --sr-duration: 800ms; --sr-delay: 0ms; }
+        @media (prefers-reduced-motion: reduce) { .sr-item { transition: none !important; transform: none !important; opacity: 1 !important; } }
     </style>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="min-h-screen bg-slate-50 font-sans text-slate-900">
 
 <!-- Navbar -->
 <nav class="navbar fixed top-0 left-0 right-0 z-50 px-4 py-3 border-b border-gray-100">
@@ -164,40 +174,6 @@
         </div>
     </div>
 </div>
-
-<!-- Asosiy Kontent -->
-<main class="pt-16 sm:pt-24 px-4 max-w-[1440px] mx-auto">
-    
-    <div class="relative overflow-hidden bg-white p-6 sm:p-10 rounded-3xl border border-gray-200 shadow-md hover:shadow-xl transition duration-300">
-        
-        <!-- subtle gradient glow -->
-        <div class="absolute -top-16 -right-16 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
-        <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-purple-500/10 blur-3xl rounded-full"></div>
-
-        <div class="relative">
-            
-            <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
-                Xush kelibsiz 👋
-            </h1>
-
-            <p class="text-gray-500 mt-3 text-sm sm:text-base">
-                Boshqaruv paneliga xush kelibsiz!
-            </p>
-
-            <div class="mt-6 flex items-center justify-between flex-wrap gap-3">     
-                <p class="text-xs sm:text-sm text-gray-400">
-                    created by 
-                    <span class="text-slate-600 font-medium hover:text-blue-600 transition cursor-pointer">
-                        @cypsev
-                    </span>
-                </p>
-            </div>
-
-        </div>
-
-    </div>
-
-</main>
 
 <script>
     // Telegram daily toast
@@ -345,6 +321,62 @@
     window.addEventListener('load', () => {
         scheduleDailySounds();
     });
+
+    /* GSAP page and scroll animations for a smoother whole-page experience */
+    (function(){
+        if (!window.gsap || !window.ScrollTrigger) return;
+        gsap.registerPlugin(ScrollTrigger);
+
+        function isIgnored(el) {
+            return !el || el.nodeType !== 1 || el.closest('nav, footer, #mobileSidebar, .toast-container, .modal-overlay, .no-sr, [data-sr-ignore]');
+        }
+
+        function animatePageLoad() {
+            const pageContainers = Array.from(document.querySelectorAll('body > div:not(#mobileSidebar):not(.toast-container):not(.modal-overlay)'))
+                .filter(el => !isIgnored(el));
+            gsap.from(pageContainers, {
+                duration: 1,
+                opacity: 0,
+                y: 30,
+                ease: 'power3.out',
+                stagger: 0.08,
+                delay: 0.12,
+            });
+
+            const nav = document.querySelector('.navbar');
+            if (nav) {
+                gsap.from(nav, { duration: 0.85, opacity: 0, y: -28, ease: 'power3.out' });
+            }
+        }
+
+        function animateScrollElements() {
+            const items = gsap.utils.toArray('main, section, .chart-card, .stats-card, .ranking-card, .form-group, .input-group, .table, .content, .content-wrapper, .page-wrapper, .page-shell, .page-container');
+            items.forEach(item => {
+                if (isIgnored(item)) return;
+                ScrollTrigger.create({
+                    trigger: item,
+                    start: 'top 92%',
+                    toggleActions: 'play none none none',
+                    once: true,
+                    onEnter: () => {
+                        gsap.fromTo(item, { opacity: 0, y: 22 }, { duration: 0.8, opacity: 1, y: 0, ease: 'power3.out' });
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            animatePageLoad();
+            animateScrollElements();
+        });
+
+        window.initPageAnimations = function(context = document) {
+            gsap.utils.toArray('main, section, .chart-card, .stats-card, .ranking-card, .form-group, .input-group, .table, .content, .content-wrapper, .page-wrapper, .page-shell, .page-container', context).forEach(item => {
+                if (isIgnored(item)) return;
+                gsap.fromTo(item, { opacity: 0, y: 22 }, { duration: 0.8, opacity: 1, y: 0, ease: 'power3.out', scrollTrigger: { trigger: item, start: 'top 92%', toggleActions: 'play none none none' } });
+            });
+        };
+    })();
 </script>
 
 </body>

@@ -198,31 +198,19 @@
     .toast.show { opacity: 1; transform: translateX(0); }
     .toast.hide { opacity: 0; transform: translateX(100%); }
     
-    /* Loading overlay */
-    .loading-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-      z-index: 9999; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; transition: opacity 0.3s;
-    }
-    .loading-spinner {
-      width: 60px; height: 60px; border: 4px solid #f3f3f3;
-      border-top: 4px solid #3b82f6; border-radius: 50%;
-      animation: spin 1s linear infinite; margin-bottom: 20px;
-    }
+    /* Loading overlay removed */
+    /* Inline chart loaders */
+    .chart-inline-loader { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 10; }
+    .chart-inline-loader.hidden { display: none; }
+    .chart-inline-spinner { width:28px; height:28px; border:3px solid #e6eaf3; border-top:3px solid #3b82f6; border-radius:50%; animation: spin 0.9s linear infinite; }
+    .chart-inline-text { margin-left:8px; font-size:13px; color:#475569; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .loading-text { font-size: 24px; font-weight: bold; color: #3b82f6; }
   </style>
 </head>
 <body class="antialiased">
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">THE BEST TEX</div>
-  </div>
-
   {{> navbar}}
 
-  <div class="w-full px-4 py-10 mt-10 sm:py-10 pt-40 relative z-10">
+  <div id="pageContentWrapper" class="w-full px-4 py-10 mt-10 sm:py-10 pt-40 relative z-10">
     <!-- Stats Cards -->
     <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div class="stats-card p-4 flex items-center gap-3 shadow-sm">
@@ -255,6 +243,7 @@
 
     <!-- Main Chart Card (to‘lqin effekti shu kartochkaning yuqori chetida) -->
     <div id="mainChartCard" class="chart-card p-4 sm:p-6 mb-8 relative">
+      <div id="loaderMain" class="chart-inline-loader hidden"><div class="chart-inline-spinner"></div><div class="chart-inline-text">Yuklanmoqda...</div></div>
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
         <div class="flex items-center gap-3 flex-wrap">
           <h2 class="text-lg font-bold text-gray-800">📊 Kunlik ishlar</h2>
@@ -283,6 +272,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <div id="yearlyChartCard" class="ranking-card p-5 shadow-sm mb-6 relative">
+    
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">📊 Oxirgi 12 oylik umumiy statistikasi <span class="text-sm font-normal text-gray-500">(barcha mahsulot turlari)</span></h2>
         <button id="fullscreenYearlyBtn" class="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition"><svg class="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg></button>
@@ -291,7 +281,8 @@
       <div class="mt-3 text-xs text-gray-400 text-center">📅 So'nggi 12 kalendar oy davomida qo'shilgan jami miqdorlar.</div>
     </div>
 
-    <div class="ranking-card p-5 shadow-sm mb-6">
+    <div id="bandChartCard" class="ranking-card p-5 shadow-sm mb-6">
+    
       <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📊 Bandlar bo'yicha tikilgan ishlar statistikasi (oylik) <span class="text-sm font-normal text-gray-500">(1–18 bandlar)</span></h2>
       <div class="mb-6"><canvas id="bandBarChart" width="800" height="400" style="max-height: 400px; width:100%;"></canvas><div class="mt-2 text-xs text-gray-400 text-center">📊 Oylik tikuv miqdori – grafik ko'rinish</div></div>
       <div id="rankingContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
@@ -307,7 +298,7 @@
       <div id="monthlyTableContainer" class="w-full overflow-x-auto"><div class="text-center py-6 text-gray-400">Maʼlumot yuklanmoqda...</div></div>
     </div>
 
-    <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌 Grafiklar yuqori o'ng burchakdagi ⛶ tugmasi bilan to'liq ekranga kengaytiriladi. Esc tugmasi bilan chiqiladi.</div>
+    <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 backdrop-blur-sm rounded-2xl p-3 shadow-sm">📌created by @cypsev. version 1.4 01.04.2026</div>
   </div>
 
   <div id="incomingModal" class="modal-overlay hidden"><div class="modal-content"><span class="close-modal" data-modal="incomingModal">&times;</span><h3>📦 Barcha kirim mahsulotlari (model bo'yicha)</h3><div id="incomingModalList">Yuklanmoqda...</div></div></div>
@@ -346,7 +337,6 @@
       let shownToasts = new Set();
       
       // DOM elements
-      const loadingOverlay = document.getElementById('loadingOverlay');
       const dateInput = document.getElementById('graphDateFilter');
       const resetDateBtn = document.getElementById('dateResetBtn');
       const aiSummaryBtn = document.getElementById('aiSummaryBtn');
@@ -365,6 +355,15 @@
 
       function getSelectedDateKey() {
         return dateInput && dateInput.value ? dateInput.value : getTodayKey();
+      }
+
+      // Show/hide inline chart loaders. By default only toggles main chart loader.
+      function setChartLoading(show, ids = ['loaderMain']) {
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (show) el.classList.remove('hidden'); else el.classList.add('hidden');
+        });
       }
 
       function escapeHtml(str) {
@@ -623,7 +622,20 @@
           badge.innerText = `${label}: ${dailyTotal} dona`;
         }
         if (!ctx) return;
-        if (mainChart) { mainChart.destroy(); mainChart = null; }
+        if (mainChart) {
+          // update existing chart for better performance
+          try {
+            mainChart.data.labels = labels;
+            mainChart.data.datasets[0].data = data;
+            mainChart.data.datasets[0].backgroundColor = backgroundColors;
+            mainChart.data.datasets[0].borderColor = borderColors;
+            mainChart.options.scales.x.ticks.font.size = Math.max(8, Math.min(11, canvasWidth / 120));
+            mainChart.update();
+            if (noDataDiv) noDataDiv.classList.add('hidden');
+          } catch(e) {
+            mainChart.destroy(); mainChart = null;
+          }
+        }
         if (dailyTotal === 0) {
           ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           if (noDataDiv) noDataDiv.classList.remove('hidden');
@@ -708,7 +720,14 @@
         const { months, totals } = getYearlyTotals(products);
         const ctx = document.getElementById('yearlyChart')?.getContext('2d');
         if (!ctx) return;
-        if (yearlyChart) { yearlyChart.destroy(); yearlyChart = null; }
+        if (yearlyChart) {
+          try {
+            yearlyChart.data.labels = monthLabels;
+            yearlyChart.data.datasets[0].data = months.map(m => totals[m]||0);
+            yearlyChart.update();
+            return;
+          } catch(e) { yearlyChart.destroy(); yearlyChart = null; }
+        }
         if (!products.length || months.reduce((s,m)=>s+totals[m],0) === 0) {
           ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           return;
@@ -760,7 +779,14 @@
         if (!ctx) return;
         const labels = BAND_TYPES;
         const data = labels.map(b => monthlySums[b]||0);
-        if (bandBarChart) { bandBarChart.destroy(); bandBarChart = null; }
+        if (bandBarChart) {
+          try {
+            bandBarChart.data.labels = labels;
+            bandBarChart.data.datasets[0].data = data;
+            bandBarChart.update();
+            return;
+          } catch(e) { bandBarChart.destroy(); bandBarChart = null; }
+        }
         if (data.reduce((a,b)=>a+b,0) === 0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
         bandBarChart = new Chart(ctx, {
           type:'bar',
@@ -816,6 +842,8 @@
       async function refreshAll() {
         if (refreshPending) return;
         refreshPending = true;
+        // show small inline loaders inside each chart card
+        setChartLoading(true);
         try {
           const dateKey = getSelectedDateKey();
           const { products, incoming, expenses, staff, attendance, machines, accessories } = await fetchAllData();
@@ -857,7 +885,7 @@
             card.classList.add('refresh-pulse');
             setTimeout(()=>card.classList.remove('refresh-pulse'), 500);
           });
-        } catch(err) { console.error('refreshAll error:', err); } finally { refreshPending = false; }
+        } catch(err) { console.error('refreshAll error:', err); } finally { setChartLoading(false); refreshPending = false; }
       }
 
       // ---------- DEBOUNCED DATE FILTER ----------
@@ -968,7 +996,8 @@
         document.body.appendChild(overlay);
         currentFullscreenOverlay = { overlay, chartCanvas, originalParent, chartInstance, statsContainer, marqueeFooter };
         video.play().catch(e=>console.warn('Video autoplay blocked',e));
-        overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:',err)).then(()=>{ setTimeout(()=>{ const rect=chartWrapper.getBoundingClientRect(); chartCanvas.width=Math.max(rect.width-16,800); chartCanvas.height=Math.max(rect.height-16,600); chartInstance.resize(); chartInstance.update(); },150); });
+        chartInstance.options.maintainAspectRatio = false;
+        overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:',err)).then(()=>{ setTimeout(()=>{ chartInstance.resize(); chartInstance.update(); },150); });
         const fsChangeHandler = () => {
           if (!document.fullscreenElement && currentFullscreenOverlay) {
             const { chartCanvas, originalParent, chartInstance, overlay, marqueeFooter } = currentFullscreenOverlay;
@@ -987,15 +1016,11 @@
             document.removeEventListener('fullscreenchange', fsChangeHandler);
             window.removeEventListener('resize', resizeHandler);
           } else if(document.fullscreenElement) {
-            setTimeout(()=>{ if(currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) { const wrapper = currentFullscreenOverlay.chartInstance.canvas.parentElement; const rect=wrapper.getBoundingClientRect(); currentFullscreenOverlay.chartCanvas.width=Math.max(rect.width-16,800); currentFullscreenOverlay.chartCanvas.height=Math.max(rect.height-16,600); currentFullscreenOverlay.chartInstance.resize(); currentFullscreenOverlay.chartInstance.update(); } },150);
+            setTimeout(()=>{ if(currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) { currentFullscreenOverlay.chartInstance.resize(); currentFullscreenOverlay.chartInstance.update(); } },150);
           }
         };
         const resizeHandler = () => {
           if(document.fullscreenElement && currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) {
-            const wrapper = currentFullscreenOverlay.chartInstance.canvas.parentElement;
-            const rect=wrapper.getBoundingClientRect();
-            currentFullscreenOverlay.chartCanvas.width=Math.max(rect.width-16,800);
-            currentFullscreenOverlay.chartCanvas.height=Math.max(rect.height-16,600);
             currentFullscreenOverlay.chartInstance.resize();
             currentFullscreenOverlay.chartInstance.update();
           }
@@ -1091,10 +1116,6 @@
         bindEvents();
         if(dateInput) dateInput.value = getTodayKey();
         await refreshAll();
-        if(loadingOverlay) {
-          loadingOverlay.style.opacity = '0';
-          setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
-        }
         setInterval(refreshAll, 30000);
         // Daily reset at midnight
         const now = new Date();

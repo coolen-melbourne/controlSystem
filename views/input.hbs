@@ -103,6 +103,7 @@
 
   <div class="flex justify-between items-center mb-3">
     <div class="bg-white/80 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 shadow-sm">📊 Jami: <span id="totalCountSpan" class="font-bold text-blue-600">0</span></div>
+    <div id="tableLoader" class="hidden text-sm text-gray-500 inline-flex items-center gap-2"><span class="loader"></span>Yuklanmoqda...</div>
     <div class="text-sm text-gray-500">📄 20 ta / sahifa</div>
   </div>
 
@@ -152,6 +153,9 @@
     "9-band","10-band","11-band","12-band","13-band","14-band","15-band",
     "16-band","17-band","18-band","Upakovka","Dazmol"
   ];
+  const CACHE_TTL = 60 * 1000; // 1 minute cache for quick UX
+  let cachedItems = null;
+  let lastItemsFetch = 0;
   let items = [];
   let currentPage = 1;
   const ITEMS_PER_PAGE = 20;
@@ -296,15 +300,41 @@
   function renderAll() { renderTable(); renderPagination(); }
 
   // ---------- Server so‘rovlari ----------
-  async function loadItemsFromServer() {
+  function setTableLoading(show) {
+    const el = document.getElementById('tableLoader');
+    if (!el) return;
+    if (show) el.classList.remove('hidden'); else el.classList.add('hidden');
+  }
+
+  async function loadItemsFromServer(forceRefresh = false) {
+    // Try to use cached items for immediate UI, then fetch latest in background
+    try {
+      const raw = localStorage.getItem('inputItemsCache');
+      if (!forceRefresh && raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && (Date.now() - (parsed.timestamp || 0) < CACHE_TTL)) {
+            items = parsed.items || [];
+            renderAll();
+            // continue to fetch fresh data in background
+          }
+        } catch(e) { /* ignore parse errors */ }
+      }
+    } catch(e) {}
+
+    setTableLoading(true);
     try {
       const res = await fetch('/api/productmanager');
       if (!res.ok) throw new Error('Load failed');
-      items = await res.json();
+      const data = await res.json();
+      items = data || [];
       renderAll();
+      localStorage.setItem('inputItemsCache', JSON.stringify({ items: items, timestamp: Date.now() }));
     } catch (err) {
       console.error(err);
       showTopAlert('⚠️ Maʼlumotlarni yuklashda xatolik', 'red');
+    } finally {
+      setTableLoading(false);
     }
   }
 
@@ -504,7 +534,8 @@
 
   // ---------- Boshlash ----------
   async function init() {
-    await loadItemsFromServer();
+    // do not block on server fetch if cache exists — render immediately and update when ready
+    loadItemsFromServer();
     bindEvents();
     resetFormToAddMode();
   }
