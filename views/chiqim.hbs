@@ -65,6 +65,27 @@
   </div>
 </div>
 
+<div id="qrModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 py-6">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+      <h2 class="text-lg font-semibold">QR kod chop etish</h2>
+      <button onclick="closeQrModal()" class="text-gray-500 hover:text-gray-900">Yopish</button>
+    </div>
+    <div class="p-5">
+      <div id="qrPrintArea" class="mx-auto rounded-xl border border-gray-200 p-4" style="width:60.2mm; min-height:40.6mm; background:#fff;">
+        <div class="mb-3 text-sm text-gray-600">QR kod o‘lchami: 60.2mm x 40.6mm</div>
+        <canvas id="qrCanvas" width="300" height="300" style="display:block; width:60.2mm; height:40.6mm; margin:auto; background:#fff;"></canvas>
+        <div id="qrDetails" class="mt-3 text-xs text-gray-700"></div>
+      </div>
+      <div class="mt-4 flex justify-end gap-3">
+        <button onclick="printQrLabel()" class="bg-blue-600 text-white px-4 py-2 rounded-xl">Print</button>
+        <button onclick="closeQrModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl">Bekor qilish</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <script>
   let incomingProducts = [];
   let expenses = [];
@@ -137,7 +158,11 @@
         <td class="px-4 py-3">${escapeHtml(exp.orderNumber) || '-'}</td>
         <td class="px-4 py-3">${exp.quantity} dona</td>
         <td class="px-4 py-3 text-xs text-gray-500">${new Date(exp.date).toLocaleString()}</td>
-        <td class="px-4 py-3 text-right space-x-2"><button onclick="editExpense('${exp._id}')" class="text-blue-600 text-sm">Tahrir</button><button onclick="deleteExpense('${exp._id}')" class="text-red-600 text-sm">O‘chir</button></td>
+        <td class="px-4 py-3 text-right space-x-2">
+          <button data-id="${exp._id}" class="print-btn text-green-600 text-sm">Chop etish</button>
+          <button data-id="${exp._id}" onclick="editExpense('${exp._id}')" class="text-blue-600 text-sm">Tahrir</button>
+          <button data-id="${exp._id}" onclick="deleteExpense('${exp._id}')" class="text-red-600 text-sm">O‘chir</button>
+        </td>
       `;
       tbody.appendChild(tr);
     });
@@ -220,6 +245,67 @@
   loadExpenses();
   window.editExpense = editExpense;
   window.deleteExpense = deleteExpense;
+  window.printQr = printQr;
+
+  // Delegated click handler for print buttons to avoid inline onclick quoting issues
+  const expenseTbody = document.getElementById('expenseTableBody');
+  if (expenseTbody) {
+    expenseTbody.addEventListener('click', (ev) => {
+      const btn = ev.target.closest && ev.target.closest('.print-btn');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      if (id) printQr(id);
+    });
+  }
+
+  function openQrModal() {
+    document.getElementById('qrModal').classList.remove('hidden');
+  }
+
+  function closeQrModal() {
+    document.getElementById('qrModal').classList.add('hidden');
+  }
+
+  function printQrLabel() {
+    const printContent = document.getElementById('qrPrintArea').innerHTML;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>QR Print</title><style>body{margin:0;padding:0;}@page{size:60.2mm 40.6mm;margin:0;} .print-area{width:60.2mm;height:40.6mm;display:flex;align-items:center;justify-content:center;}</style></head><body><div class="print-area">${printContent}</div></body></html>`);
+    printWindow.document.close();
+  }
+
+  function buildQrPayload(exp) {
+    const payload = {
+      band: exp.band,
+      modelName: exp.modelName,
+      variant: exp.variant || '-',
+      orderNumber: exp.orderNumber || '-',
+      quantity: exp.quantity,
+      date: new Date(exp.date).toLocaleString()
+    };
+    return `Band: ${payload.band}\nModel: ${payload.modelName}\nVariant: ${payload.variant}\nZakaz #: ${payload.orderNumber}\nMiqdor: ${payload.quantity} dona\nSana: ${payload.date}`;
+  }
+
+  function printQr(id) {
+    const exp = expenses.find(e => e._id === id);
+    if (!exp) return;
+    const data = buildQrPayload(exp);
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Brauzer pop-up bloklashi mumkin. Iltimos, pop-uplarni yoqing.');
+      return;
+    }
+    const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR Print</title><style>*{margin:0;padding:0;border:0;box-sizing:border-box;}html,body{width:60.2mm;height:40.6mm;overflow:hidden;}@page{size:60.2mm 40.6mm;margin:0;padding:0;}body{display:flex;align-items:center;justify-content:center;background:white;}img{width:60.2mm;height:40.6mm;object-fit:contain;}</style></head><body><img src="${qrUrl}" alt="QR" onload="setTimeout(()=>{window.print();setTimeout(()=>window.close(),800);},300);" /></body></html>`;
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+  }
 </script>
 </body>
 </html>

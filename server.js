@@ -89,6 +89,18 @@ const accessorySchema = new mongoose.Schema({
 });
 const Accessory = mongoose.model("Accessory", accessorySchema);
 
+const qrNameSchema = new mongoose.Schema({
+  fullName: { type: String, required: true },
+  band: String,
+  modelName: String,
+  variant: String,
+  orderNumber: String,
+  quantity: Number,
+  date: { type: Date, default: Date.now },
+  month: { type: String, default: () => new Date().toISOString().slice(0, 7) }
+});
+const QRName = mongoose.model("QRName", qrNameSchema);
+
 // Add indexes for performance
 (async () => {
   try {
@@ -97,6 +109,8 @@ const Accessory = mongoose.model("Accessory", accessorySchema);
     await Expense.collection.createIndex({ date: 1 });
     await Machine.collection.createIndex({ createdAt: 1 });
     await Accessory.collection.createIndex({ createdAt: 1 });
+    await QRName.collection.createIndex({ month: 1, fullName: 1 });
+    await QRName.collection.createIndex({ date: -1 });
     console.log('Indexes created successfully');
   } catch (err) {
     console.error('Index creation error:', err);
@@ -894,6 +908,100 @@ app.delete("/api/accessories/:id", async (req, res) => {
   res.json({ success: true });
 });
 
+app.get("/api/qr-names", async (req, res) => {
+  const { month } = req.query;
+  const query = month ? { month } : {};
+  const records = await QRName.find(query).sort({ date: -1 });
+  res.json(records);
+});
+
+app.post("/api/qr-names", async (req, res) => {
+  try {
+    const record = new QRName(req.body);
+    await record.save();
+    await sendTelegramMessage(`✅ QR Nom: <b>${escapeHtml(record.fullName)}</b> – ${escapeHtml(record.modelName)} (${record.quantity} dona)`);
+    res.json(record);
+  } catch (err) {
+    console.error('QR Name save error:', err);
+    res.status(500).json({ error: 'Saqlashda xatolik' });
+  }
+});
+
+app.put("/api/qr-names/:id", async (req, res) => {
+  const record = await QRName.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(record);
+});
+
+app.delete("/api/qr-names/:id", async (req, res) => {
+  await QRName.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+});
+
+app.get("/api/qr-names/export/excel", async (req, res) => {
+  try {
+    const { month } = req.query;
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const query = month ? { month } : {};
+    const records = await QRName.find(query).sort({ fullName: 1, date: 1 });
+    
+    const groupedByName = {};
+    records.forEach(r => {
+      if (!groupedByName[r.fullName]) groupedByName[r.fullName] = [];
+      groupedByName[r.fullName].push(r);
+    });
+
+    Object.entries(groupedByName).forEach(([name, items]) => {
+      const worksheet = workbook.addWorksheet(name.slice(0, 31));
+      worksheet.columns = [
+        { header: 'Ism', key: 'name', width: 20 },
+        { header: 'Model', key: 'model', width: 25 },
+        { header: 'Variant', key: 'variant', width: 15 },
+        { header: 'Zakaz #', key: 'order', width: 15 },
+        { header: 'Band', key: 'band', width: 10 },
+        { header: 'Miqdor (dona)', key: 'qty', width: 12 },
+        { header: 'Sana', key: 'date', width: 18 }
+      ];
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF366092' } };
+      worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'center' };
+
+      let totalQty = 0;
+      items.forEach((item, idx) => {
+        const row = worksheet.addRow({
+          name: item.fullName,
+          model: item.modelName,
+          variant: item.variant || '—',
+          order: item.orderNumber || '—',
+          band: item.band || '—',
+          qty: item.quantity,
+          date: new Date(item.date).toLocaleString('uz-UZ')
+        });
+        row.alignment = { horizontal: 'left', vertical: 'center' };
+        row.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        totalQty += item.quantity;
+      });
+
+      const totalRow = worksheet.addRow({ name: 'JAMI', qty: totalQty });
+      totalRow.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+      totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF70AD47' } };
+      totalRow.alignment = { horizontal: 'center', vertical: 'center' };
+      totalRow.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+
+      worksheet.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToHeight: 1, fitToWidth: 1 };
+      worksheet.margins = { left: 0.5, right: 0.5, top: 0.5, bottom: 0.5 };
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="QR_Nomlar_${month || 'Barchasi'}.xlsx"`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('Excel export error:', err);
+    res.status(500).json({ error: 'Excel export xatosi' });
+  }
+});
+
 app.get("/api/stats/today", async (req, res) => {
   try {
     const todayStart=moment().startOf("day").toDate(), todayEnd=moment().endOf("day").toDate();
@@ -1086,6 +1194,7 @@ app.get("/",          (req,res)=>res.render("input",      {title:"Mahsulotlar", 
 app.get("/grafik",    (req,res)=>res.render("grafik",     {title:"Statistika",  active:"graph"}));
 app.get("/kesimXona", (req,res)=>res.render("kesimXona",  {title:"Kirim",       active:"income"}));
 app.get("/chiqim",    (req,res)=>res.render("chiqim",     {title:"Chiqim",      active:"expense"}));
+app.get("/qrNames",   (req,res)=>res.render("qrNames",    {title:"QR Nomlar",   active:"qrnames"}));
 app.get("/mikrafon",  (req,res)=>res.render("mikrafon",   {title:"Mikrafon",    active:"mic"}));
 app.get("/mashinkalar",(req,res)=>res.render("mashinkalar",{title:"Mashinkalar",active:"machines"}));
 app.get("/kadrlar",   (req,res)=>res.render("kadrlar",    {title:"Kadrlar",     active:"staff"}));

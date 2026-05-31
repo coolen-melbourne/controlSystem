@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>{{title}} | QR Nomlar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f2f2f7; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    .ios-card { background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03); }
+  </style>
+</head>
+<body class="antialiased">
+
+{{> navbar}}
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-10">
+  <h1 class="text-3xl font-bold mb-8 text-center tracking-tight">QR Kod Tekshirish</h1>
+
+  <!-- Input Form -->
+  <div class="ios-card p-6 mb-8 sticky top-20 z-40">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1.5">Ishchi Nomi</label>
+        <input type="text" id="employeeName" class="w-full bg-gray-100 rounded-xl px-4 py-3 text-lg font-medium" placeholder="Ishchi nomini kiriting" autocomplete="off">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1.5">QR Kod (Model:Variant:Miqdor)</label>
+        <input type="text" id="qrCodeInput" class="w-full bg-gray-100 rounded-xl px-4 py-3 text-lg font-medium" placeholder="QR kodni o'qing..." autocomplete="off">
+        <div class="text-xs text-gray-500 mt-1">Format: Samsung:A12:50 yoki boshqa formatda</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Control Buttons -->
+  <div class="flex gap-3 mb-8">
+    <button onclick="clearAllRecords()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-xl text-sm font-medium">🗑️ Hammasini O'chirish</button>
+  </div>
+
+  <!-- Employee Cards -->
+  <div id="employeeCardsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Cards will be rendered here -->
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="ios-card p-8 text-center text-gray-400">
+    <p class="text-lg">📭 Hech qanday yozuv yo'q</p>
+    <p class="text-sm mt-2">QR kodlarni o'qishni boshlang</p>
+  </div>
+</div>
+
+<script>
+  let qrRecords = [];
+
+  // Load records from localStorage
+  function loadRecords() {
+    const saved = localStorage.getItem('qrCodeRecords');
+    qrRecords = saved ? JSON.parse(saved) : [];
+    renderCards();
+  }
+
+  // Save records to localStorage
+  function saveRecords() {
+    localStorage.setItem('qrCodeRecords', JSON.stringify(qrRecords));
+    renderCards();
+  }
+
+  // Parse QR code data
+  function parseQRCode(qrCode) {
+    // Expected format: Model:Variant:Quantity or similar
+    const parts = qrCode.split(':').map(p => p.trim());
+    return {
+      model: parts[0] || 'N/A',
+      variant: parts[1] || 'N/A',
+      quantity: parseInt(parts[2]) || 1
+    };
+  }
+
+  // Handle QR code input
+  document.getElementById('qrCodeInput').addEventListener('keypress', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+
+    const employeeName = document.getElementById('employeeName').value.trim();
+    const qrCode = document.getElementById('qrCodeInput').value.trim();
+
+    if (!employeeName) {
+      alert('❌ Ishchi nomini kiriting!');
+      document.getElementById('employeeName').focus();
+      return;
+    }
+
+    if (!qrCode) {
+      alert('❌ QR kodni kiriting!');
+      return;
+    }
+
+    const parsed = parseQRCode(qrCode);
+    
+    // Show confirmation dialog
+    const confirmMsg = `📱 QR Kod Tekshirildi\n\n👤 Ishchi: ${employeeName}\n📦 Model: ${parsed.model}\n🏷️ Variant: ${parsed.variant}\n📊 Miqdor: ${parsed.quantity}\n\n✅ Qabul qilaymi?`;
+    
+    if (confirm(confirmMsg)) {
+      // Accept - save record
+      const now = new Date();
+      
+      qrRecords.push({
+        employeeName,
+        model: parsed.model,
+        variant: parsed.variant,
+        quantity: parsed.quantity,
+        date: now.toISOString(),
+        id: Date.now() + Math.random()
+      });
+      
+      saveRecords();
+      
+      // Clear inputs
+      document.getElementById('employeeName').value = '';
+      document.getElementById('qrCodeInput').value = '';
+      
+      // Show success
+      alert('✅ Qabul qilindi!');
+      document.getElementById('employeeName').focus();
+    } else {
+      // Reject
+      document.getElementById('qrCodeInput').value = '';
+      document.getElementById('qrCodeInput').focus();
+    }
+  });
+
+  // Render employee cards
+  function renderCards() {
+    const container = document.getElementById('employeeCardsContainer');
+    const emptyState = document.getElementById('emptyState');
+    
+    if (qrRecords.length === 0) {
+      container.innerHTML = '';
+      emptyState.style.display = 'block';
+      return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    // Group by employee name
+    const groupedByEmployee = {};
+    qrRecords.forEach(record => {
+      if (!groupedByEmployee[record.employeeName]) {
+        groupedByEmployee[record.employeeName] = [];
+      }
+      groupedByEmployee[record.employeeName].push(record);
+    });
+
+    // Sort by name
+    const sortedEmployees = Object.keys(groupedByEmployee).sort();
+
+    container.innerHTML = '';
+    
+    sortedEmployees.forEach(employeeName => {
+      const records = groupedByEmployee[employeeName];
+      let totalQuantity = 0;
+      
+      records.forEach(r => {
+        totalQuantity += r.quantity;
+      });
+
+      const card = document.createElement('div');
+      card.className = 'ios-card p-6';
+      
+      // Header
+      let headerHTML = `
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-blue-600">👤 ${escapeHtml(employeeName)}</h2>
+          <div class="flex gap-2">
+            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">${records.length} ish</span>
+            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">${totalQuantity} dona</span>
+          </div>
+        </div>
+      `;
+
+      // Table
+      let tableHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="bg-gray-50 border-b-2 border-gray-200">
+                <th class="px-3 py-2 text-gray-600 font-semibold">1. Model</th>
+                <th class="px-3 py-2 text-gray-600 font-semibold">2. Variant</th>
+                <th class="px-3 py-2 text-gray-600 font-semibold">3. Miqdor</th>
+                <th class="px-3 py-2 text-gray-600 font-semibold">4. Vaqt</th>
+                <th class="px-3 py-2 text-right text-gray-600 font-semibold">Amallar</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      records.forEach(record => {
+        const recordDate = new Date(record.date);
+        const timeStr = recordDate.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
+        
+        tableHTML += `
+          <tr class="border-b border-gray-100 hover:bg-gray-50">
+            <td class="px-3 py-2 font-medium">${escapeHtml(record.model)}</td>
+            <td class="px-3 py-2">${escapeHtml(record.variant)}</td>
+            <td class="px-3 py-2 text-center"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm font-semibold">${record.quantity}</span></td>
+            <td class="px-3 py-2 text-xs text-gray-500">${timeStr}</td>
+            <td class="px-3 py-2 text-right"><button onclick="deleteRecord('${record.id}')" class="text-red-600 hover:text-red-800 text-xs font-medium">🗑️</button></td>
+          </tr>
+        `;
+      });
+
+      tableHTML += `
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Footer with totals
+      let footerHTML = `
+        <div class="mt-4 pt-4 border-t-2 border-blue-200 bg-blue-50 rounded-lg p-3">
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-bold text-blue-700">Jami:</span>
+            <div class="flex gap-3">
+              <span class="text-lg font-bold text-blue-700">${totalQuantity} dona</span>
+              <button onclick="deleteEmployee('${employeeName}')" class="bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1 rounded text-sm font-medium">Ishchini O'chir</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      card.innerHTML = headerHTML + tableHTML + footerHTML;
+      container.appendChild(card);
+    });
+  }
+
+  // Delete single record
+  function deleteRecord(id) {
+    if (!confirm('O\'chirilsinmi?')) return;
+    qrRecords = qrRecords.filter(r => r.id != id);
+    saveRecords();
+  }
+
+  // Delete all records for an employee
+  function deleteEmployee(employeeName) {
+    if (!confirm(`"${employeeName}" ning barcha yozuvlari o'chirilsinmi?`)) return;
+    qrRecords = qrRecords.filter(r => r.employeeName !== employeeName);
+    saveRecords();
+  }
+
+  // Clear all records
+  function clearAllRecords() {
+    if (!confirm('❌ Barcha yozuvlar o\'chirilsinmi? Bu qaytarilmaydi!')) return;
+    qrRecords = [];
+    saveRecords();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+  }
+
+  // Load on page load
+  loadRecords();
+  document.getElementById('employeeName').focus();
+  
+  window.deleteRecord = deleteRecord;
+  window.deleteEmployee = deleteEmployee;
+  window.clearAllRecords = clearAllRecords;
+</script>
+</body>
+</html>
