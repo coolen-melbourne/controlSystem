@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* Barcha avvalgi stillar (qisqartirilmagan) */
+    /* Barcha avvalgi stillar (o‘zgarishsiz) */
     body {
       background: linear-gradient(145deg, #eef2f9 0%, #e2e8f0 100%);
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
@@ -371,13 +371,12 @@
       <div class="relative bg-white/40 rounded-2xl p-1 shadow-inner">
         <canvas id="quantityChart" width="1000" height="500" style="width:100%; height:auto; max-height:65vh;"></canvas>
       </div>
-      <div id="planLineInfo" class="text-xs text-gray-500 mt-3 text-center"><i class="fas fa-chart-line text-orange-400"></i> Kesilgan chiziq – kunlik plan (ustidagi sonlar plan qiymati)</div>
+      <div id="planLineInfo" class="text-xs text-gray-500 mt-3 text-center"><i class="fas fa-chart-line text-orange-400"></i> Kesilgan chiziq – kunlik plan (ustidagi qora fondagi oq sonlar plan qiymati)</div>
       <div id="belowPlanBands" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
         <div class="flex items-center gap-2 font-bold text-red-700 mb-2"><i class="fas fa-exclamation-triangle"></i> Plandan past bajarilganlar:</div>
         <div id="belowPlanList" class="flex flex-wrap gap-2"></div>
       </div>
       <div id="noDataMessage" class="hidden text-center py-12 text-gray-400"><i class="fas fa-inbox text-3xl"></i><p>Bugun maʼlumot yoʻq</p></div>
-      <!-- ✅ LEGENDA O‘ZGARTIRILDI: yashil rang endi ≥100% -->
       <div class="mt-3 text-xs text-gray-400 text-center flex justify-center gap-3"><span><i class="fas fa-square text-red-500"></i> &lt;50%</span><span><i class="fas fa-square text-yellow-500"></i> 50–99%</span><span><i class="fas fa-square text-green-500"></i> ≥100%</span></div>
     </div>
 
@@ -593,7 +592,7 @@
         }
         return sums;
       }
-      // ✅ Yashil rang endi 100% va undan yuqori uchun
+      // Yashil rang 100% va undan yuqori uchun
       function getColorByRatio(ratio) {
         if (ratio >= 1.0) return 'rgba(34,197,94,0.85)';
         if (ratio >= 0.5) return 'rgba(245,158,11,0.85)';
@@ -683,20 +682,20 @@
                 borderWidth: 2.5,
                 borderDash: [6, 6],
                 fill: false,
-                pointRadius: 4,
+                pointRadius: 5,
                 pointBackgroundColor: '#f59e0b',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 tension: 0.1,
+                // ✅ TO‘G‘RILANGAN: oq rang, qora fon, aniq ko‘rinadigan plan raqamlari
                 datalabels: {
-                  anchor: 'end',
                   align: 'top',
-                  offset: 8,
-                  color: '#f59e0b',
-                  backgroundColor: 'rgba(255,255,255,0.8)',
-                  borderRadius: 4,
-                  padding: { left: 4, right: 4, top: 2, bottom: 2 },
-                  font: { weight: 'bold', size: 11 },
+                  offset: 10,
+                  color: '#ffffff',
+                  backgroundColor: '#000000',
+                  borderRadius: 6,
+                  padding: { left: 6, right: 6, top: 4, bottom: 4 },
+                  font: { weight: 'bold', size: 14 },
                   formatter: (value, context) => {
                     let originalVal = value;
                     const type = context.chart.data.labels[context.dataIndex];
@@ -710,6 +709,9 @@
           options: {
             responsive: true,
             maintainAspectRatio: true,
+            layout: {
+              padding: { top: 20, bottom: 10 } // raqamlar chiqib ketmasligi uchun
+            },
             plugins: {
               tooltip: {
                 callbacks: {
@@ -727,21 +729,22 @@
               },
               legend: { position: 'top' },
               datalabels: {
+                // Bar (haqiqiy) uchun – oq matn, qora fon
                 anchor: 'end',
                 align: 'top',
                 offset: 6,
                 color: '#fff',
-                font: { weight: 'bold', size: Math.max(8, Math.min(12, canvasWidth/100)) },
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 borderRadius: 6,
                 padding: 4,
+                font: { weight: 'bold', size: Math.max(8, Math.min(12, canvasWidth/100)) },
                 formatter: (value, context) => {
                   if (context.datasetIndex === 0) {
                     let val = value, type = context.chart.data.labels[context.dataIndex];
                     if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
                     return val === 0 ? '' : val;
                   }
-                  return '';
+                  return ''; // plan datasetda yuqoridagi dataset-specific sozlamalar ishlaydi
                 }
               }
             },
@@ -755,7 +758,7 @@
         });
       }
 
-      // Qolgan funksiyalar (to'liq, qisqartirilmagan)
+      // Qolgan funksiyalar (to'liq, o'zgarishsiz)
       async function loadMonthlyPlanSummary() {
         const month = monthPicker.value;
         if (!month) return;
@@ -792,7 +795,7 @@
             const date = new Date(p.createdAt).toISOString().slice(0,10);
             actualByDate.set(date, (actualByDate.get(date)||0) + (p.quantity||0));
           }
-          let tableHtml = '<table class="w-full text-sm"><thead><tr><th class="p-2">Sana</th><th class="p-2">Plan</th><th class="p-2">Haqiqiy</th><th class="p-2">%</th></tr></thead><tbody>';
+          let tableHtml = '<table class="w-full text-sm"><thead><tr><th class="p-2">Sana</th><th class="p-2">Plan</th><th class="p-2">Haqiqiy</th><th class="p-2">%</th><tr></thead><tbody>';
           for (let d = new Date(start); d <= new Date(end); d.setDate(d.getDate()+1)) {
             const dateStr = d.toISOString().slice(0,10);
             const dailyPlanObj = dailyPlans.find(dp => dp.date === dateStr);
@@ -808,9 +811,9 @@
             else if (percent >= 80) statusClass = 'text-emerald-600';
             else if (percent >= 50) statusClass = 'text-yellow-600';
             else statusClass = 'text-red-600';
-            tableHtml += `<tr><td class="p-2">${dateStr}<td><td class="p-2">${planQty}</td><td class="p-2">${actual}</td><td class="p-2 ${statusClass}">${percent}%</td></tr>`;
+            tableHtml += `<tr><td class="p-2">${dateStr}</td><td class="p-2">${planQty}</td><td class="p-2">${actual}</td><td class="p-2 ${statusClass}">${percent}%</td></tr>`;
           }
-          tableHtml += '</tbody><table>';
+          tableHtml += '</tbody></table>';
           bandDetailContent.innerHTML = tableHtml;
         } catch(err) { bandDetailContent.innerHTML = '<div class="text-red-500">Xatolik</div>'; }
       }
@@ -839,7 +842,7 @@
             if (!seen.has(key)) { seen.add(key); actualMap.set(prod.productType, actualMap.get(prod.productType) + (prod.quantity||0)); }
           }
         }
-        let html = `<table class="plan-vs-actual-table w-full text-sm border-collapse"><thead class="bg-gray-100"><tr><th class="p-2">Band</th><th>Jami plan (dona)</th><th>Jami haqiqiy (dona)</th><th>Bajarilish %</th></tr></thead><tbody>`;
+        let html = `<table class="plan-vs-actual-table w-full text-sm border-collapse"><thead class="bg-gray-100"><tr><th class="p-2">Band</th><th>Jami plan (dona)</th><th>Jami haqiqiy (dona)</th><th>Bajarilish %</th><tr></thead><tbody>`;
         for (const band of BAND_TYPES) {
           const plan = totalPlanMap.get(band)||0;
           const actual = actualMap.get(band)||0;
@@ -952,11 +955,11 @@
         if (!total) { container.innerHTML = '<div class="text-center py-6 text-gray-400">📭 Maʼlumot yo\'q</div>'; return; }
         let html = '<table class="w-full text-sm"><thead><tr><th>#</th><th>Band</th><th class="text-right">Oylik</th></tr></thead><tbody>';
         entries.forEach(([t,q],i)=>html+=`<tr class="border-b"><td class="py-2">${i+1}</td><td class="py-2 font-semibold">${t}</td><td class="py-2 text-right font-bold text-indigo-600">${q}</td></tr>`);
-        html+=`<tr class="border-t font-bold"><td colspan="2">Jami</td><td class="text-right">${total}</td></table></tbody><table>`;
+        html+=`<tr class="border-t font-bold"><td colspan="2">Jami</td><td class="text-right">${total}</td></tr></tbody></table>`;
         container.innerHTML = html;
       }
       function renderExtraStats(ua,da) {
-        document.getElementById('extraStatsContainer').innerHTML = `<table class="w-full text-sm"><tr class="border-b"><td class="py-2">📦 Upakovka</td><td class="py-2 text-right font-bold">${ua}</td></tr><tr class="border-b"><td class="py-2">🔥 Dazmol</td><td class="text-right font-bold">${da}</td></tr><tr class="border-t font-bold"><td class="py-2">Jami</td><td class="text-right">${ua+da}</td></tr></table>`;
+        document.getElementById('extraStatsContainer').innerHTML = `<table class="w-full text-sm"><tr class="border-b"><td class="py-2">📦 Upakovka</td><td class="py-2 text-right font-bold">${ua}<tr></tr><tr class="border-b"><td class="py-2">🔥 Dazmol</td><td class="text-right font-bold">${da}<tr></tr><tr class="border-t font-bold"><td class="py-2">Jami</td><td class="text-right">${ua+da}</td></tr></table>`;
       }
       function renderMonthlyTable(incoming, expenses) {
         const container = document.getElementById('monthlyTableContainer');
@@ -1072,7 +1075,7 @@
       }
 
       // Modal va eslatma funksiyalari (to'liq)
-      async function showIncomingModal() { const modal = document.getElementById('incomingModal'), c = document.getElementById('incomingModalList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const items = await fetchAPI('/api/incoming', null); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Kirim yo\'q</div>'; return; } let html = ''; const groups = {}; items.forEach(i => { const m = i.modelName || 'Noma\'lum'; if (!groups[m]) groups[m] = []; groups[m].push(i); }); for (const [mn, its] of Object.entries(groups)) { html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Miqdor</th><th>Sana</th></table>`; its.forEach(i => html += `<tr><td>${escapeHtml(i.variant||'—')}</td><td>${escapeHtml(i.orderNumber||'—')}</td><td class="text-right">${i.quantity}</td><td>${new Date(i.date).toLocaleDateString()}</td></tr>`); html += `</table></div>`; } c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
+      async function showIncomingModal() { const modal = document.getElementById('incomingModal'), c = document.getElementById('incomingModalList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const items = await fetchAPI('/api/incoming', null); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Kirim yo\'q</div>'; return; } let html = ''; const groups = {}; items.forEach(i => { const m = i.modelName || 'Noma\'lum'; if (!groups[m]) groups[m] = []; groups[m].push(i); }); for (const [mn, its] of Object.entries(groups)) { html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Miqdor</th><th>Sana</th></tr>`; its.forEach(i => html += `<tr><td>${escapeHtml(i.variant||'—')}</td><td>${escapeHtml(i.orderNumber||'—')}</td><td class="text-right">${i.quantity}</td><td>${new Date(i.date).toLocaleDateString()}</td></tr>`); html += `<tr></div>`; } c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
       async function showExpenseModal() { const modal = document.getElementById('expenseModal'), c = document.getElementById('expenseModalList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const all = await fetchAPI('/api/expenses', null); const today = getTodayKey(); const items = all.filter(e => new Date(e.date).toISOString().split('T')[0] === today); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Bugungi chiqim yo\'q</div>'; return; } let html = ''; const groups = {}; items.forEach(i => { const m = i.modelName || 'Noma\'lum'; if (!groups[m]) groups[m] = []; groups[m].push(i); }); for (const [mn, its] of Object.entries(groups)) { html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Band</th><th>Miqdor</th></tr>`; its.forEach(i => html += `<tr><td>${escapeHtml(i.variant||'—')}</td><td>${escapeHtml(i.orderNumber||'—')}</td><td>${escapeHtml(i.band||'—')}</td><td class="text-right">${i.quantity}</td></tr>`); html += `</table></div>`; } c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
       async function showAccessoriesModal() { const modal = document.getElementById('accessoriesModal'), c = document.getElementById('modalAccessoriesList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const items = await fetchAPI('/api/accessories', null); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Aksessuar yo\'q</div>'; return; } let html = '<table class="w-full text-sm"><tr><th>Nomi</th><th>Kod</th><th>Soni</th><th>Kg</th><th>Metr</th></tr>'; items.forEach(i => html += `<tr><td>${escapeHtml(i.productName)}</td><td>${escapeHtml(i.code||'—')}</td><td class="text-right">${i.quantity??'—'}</td><td class="text-right">${i.kg??'—'}</td><td class="text-right">${i.meters??'—'}</td></tr>`); html += '</table>'; c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
       function loadNotes() { const notes = JSON.parse(localStorage.getItem('grafikNotes')||'[]'); if (savedNotesDiv) savedNotesDiv.innerHTML = notes.map((n,i)=>`<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between"><span>${escapeHtml(n.text)}</span><small>${new Date(n.date).toLocaleString()}</small><button onclick="window.deleteNote(${i})" class="text-red-500">✖</button></div>`).join(''); }
