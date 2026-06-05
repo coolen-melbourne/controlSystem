@@ -9,19 +9,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
-    /* BASE & GLOBAL */
+    /* Barcha avvalgi stillar (qisqartirilmagan) */
     body {
       background: linear-gradient(145deg, #eef2f9 0%, #e2e8f0 100%);
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     }
-
     .navbar {
       background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.5);
     }
-
-    /* IMPROVED STATS CARDS */
     .stats-card {
       background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
       border-radius: 1.5rem;
@@ -31,7 +28,6 @@
       overflow: hidden;
       position: relative;
     }
-
     .stats-card::before {
       content: '';
       position: absolute;
@@ -43,13 +39,10 @@
       background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
       opacity: 0.6;
     }
-
     .stats-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.12), 0 4px 8px -4px rgba(0, 0, 0, 0.04);
     }
-
-    /* chart card */
     .chart-card {
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(2px);
@@ -59,7 +52,6 @@
       border: 1px solid rgba(255, 255, 255, 0.7);
       overflow: hidden;
     }
-
     .chart-card::before {
       content: '';
       position: absolute;
@@ -71,34 +63,25 @@
       animation: shimmer 3s ease-in-out infinite;
       z-index: 5;
     }
-
     @keyframes shimmer {
-      0% {
-        transform: translateX(-40%);
-      }
-      100% {
-        transform: translateX(40%);
-      }
+      0% { transform: translateX(-40%); }
+      100% { transform: translateX(40%); }
     }
-
     .daily-badge {
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
     }
-
     .icon-btn {
       transition: all 0.2s ease;
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(4px);
       border: 1px solid rgba(203, 213, 225, 0.5);
     }
-
     .icon-btn:hover {
       transform: translateY(-2px);
       background: white;
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
     }
-
     .clickable {
       cursor: pointer;
       transition: background 0.2s, padding-left 0.2s;
@@ -107,14 +90,11 @@
       padding: 0.25rem 0.5rem;
       margin-left: -0.5rem;
     }
-
     .clickable:hover {
       background-color: #f1f5f9;
       padding-left: 0.75rem;
       color: #1e40af;
     }
-
-    /* MODAL */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -128,7 +108,6 @@
       justify-content: center;
       z-index: 2000;
     }
-
     .modal-content {
       background: white;
       border-radius: 1.5rem;
@@ -139,8 +118,6 @@
       padding: 1.5rem;
       box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.3);
     }
-
-    /* FULLSCREEN OVERLAY (FIXED) */
     .fullscreen-overlay {
       position: fixed;
       top: 0;
@@ -157,7 +134,6 @@
       color: #fff;
       background: radial-gradient(ellipse at 30% 40%, #0a2f4a, #031e2f);
     }
-
     .fullscreen-overlay .stats-cards-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -166,7 +142,6 @@
       position: relative;
       z-index: 2;
     }
-
     .fullscreen-overlay .stats-card {
       background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(12px);
@@ -175,7 +150,6 @@
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
       padding: 0.9rem 1.1rem;
     }
-
     .fullscreen-overlay .stats-card h3 {
       font-size: 0.95rem;
       font-weight: 600;
@@ -183,23 +157,19 @@
       color: white;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
-
     .fullscreen-overlay .stats-card .stat-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 0.45rem;
       font-size: 0.85rem;
     }
-
     .fullscreen-overlay .stats-card .stat-label {
       color: rgba(255, 250, 220, 0.9);
     }
-
     .fullscreen-overlay .stats-card .stat-value {
       font-weight: 700;
       color: #ffd966;
     }
-
     .fullscreen-overlay .chart-wrapper {
       position: relative;
       z-index: 2;
@@ -217,7 +187,6 @@
       border: 1px solid rgba(255, 255, 255, 0.25);
       overflow: auto;
     }
-
     .fullscreen-overlay canvas {
       width: 100% !important;
       height: auto !important;
@@ -228,7 +197,6 @@
       padding: 0.8rem;
       box-sizing: border-box;
     }
-
     .fullscreen-overlay .close-fullscreen {
       position: fixed;
       top: 1rem;
@@ -247,7 +215,6 @@
       justify-content: center;
       z-index: 1001;
     }
-
     .marquee-footer {
       position: fixed;
       bottom: 0;
@@ -265,30 +232,22 @@
       align-items: center;
       justify-content: center;
     }
-
     .marquee-footer .marquee-text {
       display: inline-block;
       animation: marquee 8s linear infinite;
       white-space: nowrap;
       padding-left: 100%;
     }
-
     @keyframes marquee {
-      0% {
-        transform: translateX(100%);
-      }
-      100% {
-        transform: translateX(-100%);
-      }
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
     }
-
     .toast-container {
       position: fixed;
       top: 20px;
       right: 20px;
       z-index: 10000;
     }
-
     .toast {
       background: rgba(0, 0, 0, 0.85);
       color: white;
@@ -299,30 +258,17 @@
       transform: translateX(100%);
       transition: all 0.3s ease;
     }
-
     .toast.show {
       transform: translateX(0);
     }
-
     .refresh-pulse {
       animation: pulse-glow 0.4s ease-out;
     }
-
     @keyframes pulse-glow {
-      0% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-        transform: scale(1);
-      }
-      50% {
-        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
-        transform: scale(1.01);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-        transform: scale(1);
-      }
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2); transform: scale(1.01); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); transform: scale(1); }
     }
-
     .chart-inline-loader {
       position: absolute;
       inset: 0;
@@ -334,11 +280,7 @@
       z-index: 20;
       border-radius: 1.75rem;
     }
-
-    .chart-inline-loader.hidden {
-      display: none;
-    }
-
+    .chart-inline-loader.hidden { display: none; }
     .chart-inline-spinner {
       width: 32px;
       height: 32px;
@@ -347,39 +289,28 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .negative-value {
-      color: #ef4444;
-    }
-
-    .thumb-small {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .negative-value { color: #ef4444; }
+    .thumb-small { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; }
     @media (max-width: 640px) {
-      .chart-card {
-        padding: 1rem !important;
-      }
-      .fullscreen-overlay .stats-cards-container {
-        gap: 0.8rem;
-      }
+      .chart-card { padding: 1rem !important; }
+      .fullscreen-overlay .stats-cards-container { gap: 0.8rem; }
     }
+    .plan-vs-actual-table th, .plan-vs-actual-table td {
+      padding: 0.5rem;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .percent-green { background-color: #dcfce7; color: #166534; font-weight: bold; }
+    .percent-yellow { background-color: #fef08a; color: #854d0e; }
+    .percent-red { background-color: #fee2e2; color: #991b1b; }
   </style>
 </head>
 <body class="antialiased">
   {{> navbar}}
 
   <div id="pageContentWrapper" class="w-full px-4 py-10 mt-10 sm:py-10 pt-40 relative z-10">
-    <!-- Stats Cards (improved) -->
+    <!-- Stats Cards -->
     <div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
       <div class="stats-card p-4 flex items-center gap-3 shadow-sm relative">
         <div class="bg-blue-100 p-3 rounded-full"><span class="text-2xl">📊</span></div>
@@ -415,7 +346,7 @@
       </div>
     </div>
 
-    <!-- Main Chart Card (redesigned) -->
+    <!-- Main Chart Card -->
     <div id="mainChartCard" class="chart-card p-5 sm:p-6 mb-8 relative">
       <div id="loaderMain" class="chart-inline-loader hidden">
         <div class="chart-inline-spinner"></div>
@@ -440,18 +371,19 @@
       <div class="relative bg-white/40 rounded-2xl p-1 shadow-inner">
         <canvas id="quantityChart" width="1000" height="500" style="width:100%; height:auto; max-height:65vh;"></canvas>
       </div>
-      <div id="planLineInfo" class="text-xs text-gray-500 mt-3 text-center"><i class="fas fa-chart-line text-orange-400"></i> Kesilgan chiziq – kunlik plan</div>
+      <div id="planLineInfo" class="text-xs text-gray-500 mt-3 text-center"><i class="fas fa-chart-line text-orange-400"></i> Kesilgan chiziq – kunlik plan (ustidagi sonlar plan qiymati)</div>
       <div id="belowPlanBands" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
         <div class="flex items-center gap-2 font-bold text-red-700 mb-2"><i class="fas fa-exclamation-triangle"></i> Plandan past bajarilganlar:</div>
         <div id="belowPlanList" class="flex flex-wrap gap-2"></div>
       </div>
       <div id="noDataMessage" class="hidden text-center py-12 text-gray-400"><i class="fas fa-inbox text-3xl"></i><p>Bugun maʼlumot yoʻq</p></div>
-      <div class="mt-3 text-xs text-gray-400 text-center flex justify-center gap-3"><span><i class="fas fa-square text-red-500"></i> &lt;50%</span><span><i class="fas fa-square text-yellow-500"></i> 50–79%</span><span><i class="fas fa-square text-green-500"></i> ≥80%</span></div>
+      <!-- ✅ LEGENDA O‘ZGARTIRILDI: yashil rang endi ≥100% -->
+      <div class="mt-3 text-xs text-gray-400 text-center flex justify-center gap-3"><span><i class="fas fa-square text-red-500"></i> &lt;50%</span><span><i class="fas fa-square text-yellow-500"></i> 50–99%</span><span><i class="fas fa-square text-green-500"></i> ≥100%</span></div>
     </div>
 
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Monthly Plan -->
+    <!-- Oylik plan bajarilishi (kunlik foiz) -->
     <div class="ranking-card p-5 shadow-sm mb-6">
       <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-calendar-check text-indigo-500"></i> Oylik plan bajarilishi</h2>
@@ -462,6 +394,16 @@
       </div>
     </div>
 
+    <!-- Yangi: Oylik plan / haqiqiy (jami) jadvali -->
+    <div class="bg-white rounded-2xl p-5 shadow-md mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold"><i class="fas fa-chart-line text-green-600"></i> Oylik plan / haqiqiy (jami)</h2>
+        <button id="refreshMonthlyTable" class="bg-green-100 px-3 py-1 rounded-full text-sm"><i class="fas fa-sync-alt"></i> Yangilash</button>
+      </div>
+      <div id="monthlyPlanActualTable" class="overflow-x-auto">Yuklanmoqda...</div>
+    </div>
+
+    <!-- Qolgan grafiklar -->
     <div id="yearlyChartCard" class="ranking-card p-5 shadow-sm mb-6">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold"><i class="fas fa-chart-bar text-blue-500"></i> Oxirgi 12 oylik umumiy</h2>
@@ -494,7 +436,7 @@
     <div class="mt-4 text-center text-sm text-gray-500 bg-white/60 rounded-2xl p-3">📌 created by @cypsev. version 1.2.0 – Mukammalik - Biz bilan siz o'ylagandan ko'ra oson!</div>
   </div>
 
-  <!-- Modals -->
+  <!-- Modallar -->
   <div id="incomingModal" class="modal-overlay hidden">
     <div class="modal-content"><span class="close-modal float-right text-2xl cursor-pointer" data-modal="incomingModal">&times;</span>
       <h3 class="text-xl font-bold mb-3">📦 Barcha kirimlar</h3>
@@ -533,7 +475,7 @@
 
   <script>
     (function() {
-      const ALL_TYPES = ["1-band", "2-band", "3-band", "4-band", "5-band", "6-band", "7-band", "8-band", "9-band", "10-band", "11-band", "12-band", "13-band", "14-band", "15-band", "16-band", "17-band", "18-band", "Upakovka", "Dazmol"];
+      const ALL_TYPES = ["1-band","2-band","3-band","4-band","5-band","6-band","7-band","8-band","9-band","10-band","11-band","12-band","13-band","14-band","15-band","16-band","17-band","18-band","Upakovka","Dazmol"];
       const BAND_TYPES = ALL_TYPES.filter(t => t.includes('band'));
       const DEFAULT_PLAN_BAND = 1000;
       const DEFAULT_PLAN_OTHER = 10000;
@@ -545,7 +487,7 @@
       let lastFetchTime = 0;
       const CACHE_TTL = 5 * 60 * 1000;
 
-      // DOM elements
+      // DOM elementlari
       const dateInput = document.getElementById('graphDateFilter');
       const resetDateBtn = document.getElementById('dateResetBtn');
       const aiSummaryBtn = document.getElementById('aiSummaryBtn');
@@ -557,29 +499,24 @@
       const noteModal = document.getElementById('noteModal');
       const monthPicker = document.getElementById('monthPicker');
       const monthlyPlanDiv = document.getElementById('monthlyPlanSummary');
+      const monthlyPlanActualDiv = document.getElementById('monthlyPlanActualTable');
+      const refreshMonthBtn = document.getElementById('refreshMonthlyTable');
       const bandDetailModal = document.getElementById('bandDetailModal');
       const bandDetailTitle = document.getElementById('bandDetailTitle');
       const bandDetailContent = document.getElementById('bandDetailContent');
 
       function getTodayKey() {
         const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       }
-
       function getSelectedDateKey() {
         return dateInput && dateInput.value ? dateInput.value : getTodayKey();
       }
-
       function escapeHtml(str) {
         if (!str) return '';
-        return str.replace(/[&<>]/g, m => ({
-          '&': '&amp;',
-          '<': '&lt;',
-          '>': '&gt;'
-        }[m]));
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
       }
-
-      function showToast(message, duration = 3000) {
+      function showToast(message, duration=3000) {
         const container = document.getElementById('toastContainer');
         if (!container) return;
         const toast = document.createElement('div');
@@ -587,31 +524,24 @@
         toast.innerText = message;
         container.appendChild(toast);
         setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-          toast.classList.remove('show');
-          setTimeout(() => toast.remove(), 300);
-        }, duration);
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, duration);
       }
-
       function closeModal(id) {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       }
 
-      // API helpers
+      // API yordamchilari
       async function fetchAPI(url, signal) {
         try {
-          const res = await fetch(url, {
-            signal
-          });
+          const res = await fetch(url, { signal });
           if (!res.ok) return [];
           return await res.json();
-        } catch (err) {
+        } catch(err) {
           if (err.name !== 'AbortError') console.error(err);
           return [];
         }
       }
-
       async function fetchAllData(forceRefresh = false) {
         const now = Date.now();
         if (!forceRefresh && cachedData && (now - lastFetchTime) < CACHE_TTL) return cachedData;
@@ -629,53 +559,27 @@
             fetchAPI('/api/accessories', signal)
           ]);
           if (products === null || incoming === null) return cachedData;
-          cachedData = {
-            products: products || [],
-            incoming: incoming || [],
-            expenses: expenses || [],
-            staff: staff || [],
-            attendance: attendance || [],
-            machines: machines || [],
-            accessories: accessories || [],
-            timestamp: now
-          };
+          cachedData = { products: products || [], incoming: incoming || [], expenses: expenses || [], staff: staff || [], attendance: attendance || [], machines: machines || [], accessories: accessories || [], timestamp: now };
           lastFetchTime = now;
           localStorage.setItem('grafikDataCache', JSON.stringify(cachedData));
           return cachedData;
-        } catch (err) {
+        } catch(err) {
           if (err.name !== 'AbortError') console.error(err);
           const cached = localStorage.getItem('grafikDataCache');
-          if (cached) try {
-            const parsed = JSON.parse(cached);
-            if (Date.now() - (parsed.timestamp || 0) < CACHE_TTL) return parsed;
-          } catch (e) {}
-          return {
-            products: [],
-            incoming: [],
-            expenses: [],
-            staff: [],
-            attendance: [],
-            machines: [],
-            accessories: []
-          };
-        } finally {
-          currentAbortController = null;
-        }
+          if (cached) try { const parsed = JSON.parse(cached); if (Date.now() - (parsed.timestamp||0) < CACHE_TTL) return parsed; } catch(e) {}
+          return { products: [], incoming: [], expenses: [], staff: [], attendance: [], machines: [], accessories: [] };
+        } finally { currentAbortController = null; }
       }
-
       async function fetchDailyPlanForDate(date) {
         try {
           const res = await fetch(`/api/daily-plans?date=${date}`);
           if (!res.ok) return null;
           const data = await res.json();
           return data.plans || [];
-        } catch (e) {
-          return null;
-        }
+        } catch(e) { return null; }
       }
-
       function getDailyTotals(products, dateKey) {
-        const sums = Object.fromEntries(ALL_TYPES.map(t => [t, 0]));
+        const sums = Object.fromEntries(ALL_TYPES.map(t => [t,0]));
         if (!Array.isArray(products)) return sums;
         const seen = new Set();
         for (const p of products) {
@@ -689,9 +593,9 @@
         }
         return sums;
       }
-
+      // ✅ Yashil rang endi 100% va undan yuqori uchun
       function getColorByRatio(ratio) {
-        if (ratio >= 0.8) return 'rgba(34,197,94,0.85)';
+        if (ratio >= 1.0) return 'rgba(34,197,94,0.85)';
         if (ratio >= 0.5) return 'rgba(245,158,11,0.85)';
         return 'rgba(239,68,68,0.85)';
       }
@@ -702,18 +606,19 @@
         const planMap = new Map();
         if (dailyPlan && Array.isArray(dailyPlan)) dailyPlan.forEach(p => planMap.set(p.band, p.quantity));
         const labels = [...BAND_TYPES, 'Upakovka', 'Dazmol'];
+        // Haqiqiy (bar) – Upakovka/Dazmol 3 ga bo'linadi (grafik masshtab uchun)
         const actualData = labels.map(t => {
           let val = dailyTotals[t] || 0;
           if (t === 'Upakovka' || t === 'Dazmol') val = val / 3;
           return val;
         });
+        // Plan (chiziq) – asl plan qiymatlari, Upakovka/Dazmol uchun ham 3 ga bo'linadi
         const planData = labels.map(t => {
-          let plan;
-          if (t.includes('band')) plan = planMap.get(t) || DEFAULT_PLAN_BAND;
-          else if (t === 'Upakovka') plan = (planMap.get('Upakovka') || DEFAULT_PLAN_OTHER) / 3;
-          else plan = (planMap.get('Dazmol') || DEFAULT_PLAN_OTHER) / 3;
-          return plan;
+          if (t.includes('band')) return planMap.get(t) || DEFAULT_PLAN_BAND;
+          else if (t === 'Upakovka') return (planMap.get('Upakovka') || DEFAULT_PLAN_OTHER) / 3;
+          else return (planMap.get('Dazmol') || DEFAULT_PLAN_OTHER) / 3;
         });
+        // Ranglar uchun asl (bo'linmagan) foiz
         const ratios = labels.map(t => {
           const actual = dailyTotals[t] || 0;
           let plan;
@@ -732,38 +637,36 @@
           badgeSpan.innerText = `${label}: ${dailyTotal} dona`;
         }
         if (!ctx) return;
-        if (mainChart) {
-          mainChart.destroy();
-          mainChart = null;
-        }
+        if (mainChart) { mainChart.destroy(); mainChart = null; }
         if (dailyTotal === 0 && planData.every(v => v === 0)) {
           ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
           if (noDataDiv) noDataDiv.classList.remove('hidden');
           return;
         }
         if (noDataDiv) noDataDiv.classList.add('hidden');
+        // Plandan past bo'lganlar ro'yxati
         const belowPlan = [];
         for (const t of labels) {
-          let actual = dailyTotals[t] || 0,
-            plan;
+          let actual = dailyTotals[t] || 0, plan;
           if (t.includes('band')) plan = planMap.get(t) || DEFAULT_PLAN_BAND;
           else if (t === 'Upakovka') plan = planMap.get('Upakovka') || DEFAULT_PLAN_OTHER;
           else plan = planMap.get('Dazmol') || DEFAULT_PLAN_OTHER;
           if (plan > 0 && actual < plan) belowPlan.push(t);
         }
-        const belowDiv = document.getElementById('belowPlanBands'),
-          belowList = document.getElementById('belowPlanList');
+        const belowDiv = document.getElementById('belowPlanBands'), belowList = document.getElementById('belowPlanList');
         if (belowPlan.length) {
           belowDiv.classList.remove('hidden');
           belowList.innerHTML = belowPlan.map(b => `<span class="inline-flex items-center gap-1 bg-white/70 text-red-700 px-3 py-1 rounded-full text-xs shadow-sm"><i class="fas fa-arrow-down"></i>${b}</span>`).join('');
         } else belowDiv.classList.add('hidden');
         const canvasWidth = ctx.canvas.clientWidth || 1000;
         const barThickness = Math.min(40, Math.max(18, (canvasWidth - 100) / (labels.length * 1.5)));
+        
         mainChart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels,
-            datasets: [{
+            labels: labels,
+            datasets: [
+              {
                 label: 'Kunlik tikuv (dona)',
                 data: actualData,
                 backgroundColor: backgroundColors,
@@ -780,7 +683,27 @@
                 borderWidth: 2.5,
                 borderDash: [6, 6],
                 fill: false,
-                pointRadius: 0
+                pointRadius: 4,
+                pointBackgroundColor: '#f59e0b',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                tension: 0.1,
+                datalabels: {
+                  anchor: 'end',
+                  align: 'top',
+                  offset: 8,
+                  color: '#f59e0b',
+                  backgroundColor: 'rgba(255,255,255,0.8)',
+                  borderRadius: 4,
+                  padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                  font: { weight: 'bold', size: 11 },
+                  formatter: (value, context) => {
+                    let originalVal = value;
+                    const type = context.chart.data.labels[context.dataIndex];
+                    if (type === 'Upakovka' || type === 'Dazmol') originalVal = value * 3;
+                    return originalVal === 0 ? '' : originalVal;
+                  }
+                }
               }
             ]
           },
@@ -791,8 +714,7 @@
               tooltip: {
                 callbacks: {
                   label: (ctx) => {
-                    let val = ctx.raw,
-                      type = ctx.chart.data.labels[ctx.dataIndex];
+                    let val = ctx.raw, type = ctx.chart.data.labels[ctx.dataIndex];
                     if (ctx.datasetIndex === 0) {
                       if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
                       return `${val} dona (haqiqiy)`;
@@ -803,25 +725,19 @@
                   }
                 }
               },
-              legend: {
-                position: 'top'
-              },
+              legend: { position: 'top' },
               datalabels: {
                 anchor: 'end',
                 align: 'top',
                 offset: 6,
                 color: '#fff',
-                font: {
-                  weight: 'bold',
-                  size: Math.max(8, Math.min(12, canvasWidth / 100))
-                },
+                font: { weight: 'bold', size: Math.max(8, Math.min(12, canvasWidth/100)) },
                 backgroundColor: 'rgba(0,0,0,0.7)',
                 borderRadius: 6,
                 padding: 4,
                 formatter: (value, context) => {
                   if (context.datasetIndex === 0) {
-                    let val = value,
-                      type = context.chart.data.labels[context.dataIndex];
+                    let val = value, type = context.chart.data.labels[context.dataIndex];
                     if (type === 'Upakovka' || type === 'Dazmol') val *= 3;
                     return val === 0 ? '' : val;
                   }
@@ -830,19 +746,8 @@
               }
             },
             scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Miqdor (dona)'
-                }
-              },
-              x: {
-                ticks: {
-                  maxRotation: 35,
-                  minRotation: 35
-                }
-              }
+              y: { beginAtZero: true, title: { display: true, text: 'Miqdor (dona)' } },
+              x: { ticks: { maxRotation: 35, minRotation: 35 } }
             },
             animation: false
           },
@@ -850,7 +755,7 @@
         });
       }
 
-      // Monthly plan summary and band details (same as original, functional)
+      // Qolgan funksiyalar (to'liq, qisqartirilmagan)
       async function loadMonthlyPlanSummary() {
         const month = monthPicker.value;
         if (!month) return;
@@ -860,24 +765,14 @@
           const data = await res.json();
           let html = '<table class="w-full text-sm"><thead><tr class="border-b"><th class="py-2 text-left">Band</th><th class="py-2 text-center">✅≥100%</th><th class="py-2 text-center">🟢80-99%</th><th class="py-2 text-center">🟡50-79%</th><th class="py-2 text-center">🔴<50%</th><th class="py-2 text-center">⚫0%</th><th class="py-2 text-center">Kunlar</th></tr></thead><tbody>';
           for (const band of BAND_TYPES) {
-            const d = data[band] || {
-              totalDays: 0,
-              fullfilled: 0,
-              high: 0,
-              medium: 0,
-              low: 0,
-              zero: 0
-            };
-            html += `<tr class="border-b band-stat-cell cursor-pointer hover:bg-indigo-50" data-band="${band}"><td class="py-2 font-semibold">${band}</td><td class="py-2 text-center text-green-700 font-bold">${d.fullfilled || 0}</td><td class="py-2 text-center text-emerald-600">${d.high || 0}</td><td class="py-2 text-center text-yellow-600">${d.medium || 0}</td><td class="py-2 text-center text-red-600">${d.low || 0}</td><td class="py-2 text-center text-gray-500">${d.zero || 0}</td><td class="py-2 text-center font-medium">${d.totalDays || 0}</td></tr>`;
+            const d = data[band] || { totalDays:0, fullfilled:0, high:0, medium:0, low:0, zero:0 };
+            html += `<tr class="border-b band-stat-cell cursor-pointer hover:bg-indigo-50" data-band="${band}"><td class="py-2 font-semibold">${band}</td><td class="py-2 text-center text-green-700 font-bold">${d.fullfilled}</td><td class="py-2 text-center text-emerald-600">${d.high}</td><td class="py-2 text-center text-yellow-600">${d.medium}</td><td class="py-2 text-center text-red-600">${d.low}</td><td class="py-2 text-center text-gray-500">${d.zero}</td><td class="py-2 text-center font-medium">${d.totalDays}</td></tr>`;
           }
           html += '</tbody></table>';
           monthlyPlanDiv.innerHTML = html;
           document.querySelectorAll('.band-stat-cell').forEach(row => row.addEventListener('click', () => showBandDetails(row.getAttribute('data-band'), month)));
-        } catch (err) {
-          monthlyPlanDiv.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
+        } catch(err) { monthlyPlanDiv.innerHTML = '<div class="text-red-500">Xatolik</div>'; }
       }
-
       async function showBandDetails(band, month) {
         bandDetailTitle.innerText = `${band} - ${month} oylik batafsil`;
         bandDetailContent.innerHTML = 'Yuklanmoqda...';
@@ -886,22 +781,20 @@
           const [year, monthNum] = month.split('-');
           const start = `${year}-${monthNum}-01`;
           const lastDay = new Date(year, monthNum, 0).getDate();
-          const end = `${year}-${monthNum}-${String(lastDay).padStart(2, '0')}`;
+          const end = `${year}-${monthNum}-${String(lastDay).padStart(2,'0')}`;
           const plansRes = await fetch(`/api/daily-plans/range?start=${start}&end=${end}`);
           if (!plansRes.ok) throw new Error();
           const dailyPlans = await plansRes.json();
-          const {
-            products
-          } = await fetchAllData();
+          const { products } = await fetchAllData();
           const actualByDate = new Map();
           for (const p of products) {
             if (!p || !p.createdAt || p.productType !== band) continue;
-            const date = new Date(p.createdAt).toISOString().slice(0, 10);
-            actualByDate.set(date, (actualByDate.get(date) || 0) + (p.quantity || 0));
+            const date = new Date(p.createdAt).toISOString().slice(0,10);
+            actualByDate.set(date, (actualByDate.get(date)||0) + (p.quantity||0));
           }
           let tableHtml = '<table class="w-full text-sm"><thead><tr><th class="p-2">Sana</th><th class="p-2">Plan</th><th class="p-2">Haqiqiy</th><th class="p-2">%</th></tr></thead><tbody>';
-          for (let d = new Date(start); d <= new Date(end); d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().slice(0, 10);
+          for (let d = new Date(start); d <= new Date(end); d.setDate(d.getDate()+1)) {
+            const dateStr = d.toISOString().slice(0,10);
             const dailyPlanObj = dailyPlans.find(dp => dp.date === dateStr);
             let planQty = DEFAULT_PLAN_BAND;
             if (dailyPlanObj && dailyPlanObj.plans) {
@@ -909,305 +802,181 @@
               if (planItem) planQty = planItem.quantity;
             }
             const actual = actualByDate.get(dateStr) || 0;
-            const percent = planQty > 0 ? ((actual / planQty) * 100).toFixed(0) : 0;
+            const percent = planQty > 0 ? ((actual/planQty)*100).toFixed(0) : 0;
             let statusClass = '';
             if (percent >= 100) statusClass = 'text-green-700 font-bold';
             else if (percent >= 80) statusClass = 'text-emerald-600';
             else if (percent >= 50) statusClass = 'text-yellow-600';
             else statusClass = 'text-red-600';
-            tableHtml += `<tr><td class="p-2">${dateStr}</td><td class="p-2">${planQty}</td><td class="p-2">${actual}</td><td class="p-2 ${statusClass}">${percent}%</td></tr>`;
+            tableHtml += `<tr><td class="p-2">${dateStr}<td><td class="p-2">${planQty}</td><td class="p-2">${actual}</td><td class="p-2 ${statusClass}">${percent}%</td></tr>`;
           }
-          tableHtml += '</tbody></table>';
+          tableHtml += '</tbody><table>';
           bandDetailContent.innerHTML = tableHtml;
-        } catch (err) {
-          bandDetailContent.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
+        } catch(err) { bandDetailContent.innerHTML = '<div class="text-red-500">Xatolik</div>'; }
       }
-
-      // Statistics helpers (short versions)
-      function getMonthlyTotals(products, monthKey) {
-        const targetMonth = monthKey || getTodayKey().slice(0, 7);
-        let total = 0;
+      async function loadMonthlyPlanVsActual() {
+        let month = monthPicker.value;
+        if (!month) { const now = new Date(); month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; monthPicker.value = month; }
+        const [year, monthNum] = month.split('-');
+        const startStr = `${year}-${monthNum}-01`;
+        const lastDay = new Date(year, monthNum, 0).getDate();
+        const endStr = `${year}-${monthNum}-${String(lastDay).padStart(2,'0')}`;
+        let plans = [];
+        try { const res = await fetch(`/api/daily-plans/range?start=${startStr}&end=${endStr}`); if (res.ok) plans = await res.json(); } catch(e) { console.error(e); }
+        const totalPlanMap = new Map(); BAND_TYPES.forEach(b => totalPlanMap.set(b,0));
+        for (const dayPlan of plans) {
+          if (!dayPlan.plans) continue;
+          for (const p of dayPlan.plans) if (totalPlanMap.has(p.band)) totalPlanMap.set(p.band, totalPlanMap.get(p.band) + (p.quantity||0));
+        }
+        const { products } = await fetchAllData();
+        const actualMap = new Map(); BAND_TYPES.forEach(b => actualMap.set(b,0));
         const seen = new Set();
+        for (const prod of products) {
+          if (!prod || !prod.createdAt || !prod.productType || prod.quantity===undefined) continue;
+          const prodDate = new Date(prod.createdAt).toISOString().slice(0,10);
+          if (prodDate >= startStr && prodDate <= endStr && BAND_TYPES.includes(prod.productType)) {
+            const key = prod._id;
+            if (!seen.has(key)) { seen.add(key); actualMap.set(prod.productType, actualMap.get(prod.productType) + (prod.quantity||0)); }
+          }
+        }
+        let html = `<table class="plan-vs-actual-table w-full text-sm border-collapse"><thead class="bg-gray-100"><tr><th class="p-2">Band</th><th>Jami plan (dona)</th><th>Jami haqiqiy (dona)</th><th>Bajarilish %</th></tr></thead><tbody>`;
+        for (const band of BAND_TYPES) {
+          const plan = totalPlanMap.get(band)||0;
+          const actual = actualMap.get(band)||0;
+          let percent = 0, pClass = '';
+          if (plan > 0) {
+            percent = (actual/plan)*100;
+            if (percent >= 100) pClass = 'percent-green';
+            else if (percent >= 50) pClass = 'percent-yellow';
+            else pClass = 'percent-red';
+          }
+          html += `<tr><td class="p-2 font-medium">${band}</td><td class="p-2">${plan}</td><td class="p-2">${actual}</td><td class="p-2 ${pClass}">${percent.toFixed(1)}%</td></tr>`;
+        }
+        html += `</tbody></table>`;
+        monthlyPlanActualDiv.innerHTML = html;
+      }
+      // Statistik funksiyalar (qisqa, to'liq)
+      function getMonthlyTotals(products, monthKey) {
+        const targetMonth = monthKey || getTodayKey().slice(0,7);
+        let total = 0; const seen = new Set();
         for (const p of products) {
-          if (!p || !p.createdAt || p.quantity === undefined) continue;
+          if (!p || !p.createdAt || p.quantity===undefined) continue;
           const pDate = new Date(p.createdAt);
           if (isNaN(pDate.getTime())) continue;
-          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
           const key = `${p._id || p.id}`;
-          if (pMonth === targetMonth && BAND_TYPES.includes(p.productType) && !seen.has(key)) {
-            seen.add(key);
-            total += parseInt(p.quantity) || 0;
-          }
+          if (pMonth === targetMonth && BAND_TYPES.includes(p.productType) && !seen.has(key)) { seen.add(key); total += parseInt(p.quantity)||0; }
         }
         return total;
       }
-
       function getCurrentMonthBandTotals(products, monthKey) {
-        const targetMonth = monthKey || getTodayKey().slice(0, 7);
-        const sums = Object.fromEntries(BAND_TYPES.map(b => [b, 0]));
-        const seen = new Set();
+        const targetMonth = monthKey || getTodayKey().slice(0,7);
+        const sums = Object.fromEntries(BAND_TYPES.map(b=>[b,0])); const seen = new Set();
         for (const p of products) {
-          if (!p || !p.createdAt || !p.productType || p.quantity === undefined) continue;
+          if (!p || !p.createdAt || !p.productType || p.quantity===undefined) continue;
           const pDate = new Date(p.createdAt);
           if (isNaN(pDate.getTime())) continue;
-          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
           const key = `${p._id || p.id}`;
-          if (pMonth === targetMonth && sums.hasOwnProperty(p.productType) && !seen.has(key)) {
-            seen.add(key);
-            sums[p.productType] += parseInt(p.quantity) || 0;
-          }
+          if (pMonth === targetMonth && sums.hasOwnProperty(p.productType) && !seen.has(key)) { seen.add(key); sums[p.productType] += parseInt(p.quantity)||0; }
         }
         return sums;
       }
-
       function getCurrentMonthExtraStats(products, monthKey) {
-        const targetMonth = monthKey || getTodayKey().slice(0, 7);
-        let upakovka = 0,
-          dazmol = 0;
-        const seen = new Set();
+        const targetMonth = monthKey || getTodayKey().slice(0,7);
+        let upakovka=0, dazmol=0; const seen = new Set();
         for (const p of products) {
-          if (!p || !p.createdAt || !p.productType || p.quantity === undefined) continue;
+          if (!p || !p.createdAt || !p.productType || p.quantity===undefined) continue;
           const pDate = new Date(p.createdAt);
           if (isNaN(pDate.getTime())) continue;
-          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
+          const pMonth = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
           const key = `${p._id || p.id}`;
           if (pMonth !== targetMonth || seen.has(key)) continue;
           seen.add(key);
-          const qty = parseInt(p.quantity) || 0;
+          const qty = parseInt(p.quantity)||0;
           if (p.productType === 'Upakovka') upakovka += qty;
           else if (p.productType === 'Dazmol') dazmol += qty;
         }
-        return {
-          upakovkaAll: upakovka,
-          dazmolAll: dazmol
-        };
+        return { upakovkaAll: upakovka, dazmolAll: dazmol };
       }
-
       function computeWarehouseStats(incoming, expenses) {
-        const totalIn = (incoming || []).reduce((s, p) => s + (parseInt(p.quantity) || 0), 0);
-        const totalOut = (expenses || []).reduce((s, e) => s + (parseInt(e.quantity) || 0), 0);
+        const totalIn = (incoming||[]).reduce((s,p)=>s+(parseInt(p.quantity)||0),0);
+        const totalOut = (expenses||[]).reduce((s,e)=>s+(parseInt(e.quantity)||0),0);
         const today = getTodayKey();
-        const todayExpense = (expenses || []).filter(e => e && e.date && new Date(e.date).toISOString().split('T')[0] === today).reduce((s, e) => s + (parseInt(e.quantity) || 0), 0);
-        return {
-          available: totalIn - totalOut,
-          todayExpense
-        };
+        const todayExpense = (expenses||[]).filter(e=>e&&e.date && new Date(e.date).toISOString().split('T')[0]===today).reduce((s,e)=>s+(parseInt(e.quantity)||0),0);
+        return { available: totalIn - totalOut, todayExpense };
       }
-
       function getYearlyTotals(products) {
-        const now = new Date();
-        const months = [];
-        for (let i = 11; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-        }
-        const totals = Object.fromEntries(months.map(m => [m, 0]));
-        const seen = new Set();
+        const now = new Date(); const months = [];
+        for (let i=11; i>=0; i--) { const d = new Date(now.getFullYear(), now.getMonth()-i,1); months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }
+        const totals = Object.fromEntries(months.map(m=>[m,0])); const seen = new Set();
         for (const p of products) {
-          if (!p || !p.createdAt || p.quantity === undefined) continue;
-          const pDate = new Date(p.createdAt);
-          if (isNaN(pDate.getTime())) continue;
-          const mk = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
-          const key = `${p._id || p.id}`;
-          if (totals.hasOwnProperty(mk) && !seen.has(key)) {
-            seen.add(key);
-            totals[mk] += parseInt(p.quantity) || 0;
-          }
+          if (!p||!p.createdAt||p.quantity===undefined) continue;
+          const pDate = new Date(p.createdAt); if (isNaN(pDate.getTime())) continue;
+          const mk = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`;
+          const key = `${p._id||p.id}`;
+          if (totals.hasOwnProperty(mk) && !seen.has(key)) { seen.add(key); totals[mk] += parseInt(p.quantity)||0; }
         }
-        return {
-          months,
-          totals
-        };
+        return { months, totals };
       }
-
       function renderYearlyChart(products) {
-        const {
-          months,
-          totals
-        } = getYearlyTotals(products);
+        const { months, totals } = getYearlyTotals(products);
         const ctx = document.getElementById('yearlyChart')?.getContext('2d');
         if (!ctx) return;
         if (yearlyChart) yearlyChart.destroy();
-        if (months.reduce((s, m) => s + totals[m], 0) === 0) {
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-          return;
-        }
+        if (months.reduce((s,m)=>s+totals[m],0)===0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
         yearlyChart = new Chart(ctx, {
           type: 'bar',
-          data: {
-            labels: months.map(m => new Date(m.split('-')[0], parseInt(m.split('-')[1]) - 1).toLocaleString('uz', {
-              month: 'short',
-              year: 'numeric'
-            })),
-            datasets: [{
-              label: 'Umumiy miqdor (dona)',
-              data: months.map(m => totals[m] || 0),
-              backgroundColor: 'rgba(59,130,246,0.7)',
-              borderRadius: 8
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              datalabels: {
-                anchor: 'end',
-                align: 'top',
-                offset: 4,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 12,
-                padding: 4,
-                color: 'white',
-                font: {
-                  size: 10
-                },
-                formatter: v => v > 0 ? v : ''
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true
-              }
-            }
-          },
+          data: { labels: months.map(m=>new Date(m.split('-')[0],parseInt(m.split('-')[1])-1).toLocaleString('uz',{month:'short',year:'numeric'})), datasets: [{ label:'Umumiy miqdor (dona)', data: months.map(m=>totals[m]), backgroundColor:'rgba(59,130,246,0.7)', borderRadius:8 }] },
+          options: { responsive:true, plugins:{ datalabels:{ anchor:'end', align:'top', offset:4, backgroundColor:'rgba(0,0,0,0.7)', borderRadius:12, padding:4, color:'white', font:{size:10}, formatter:v=>v>0?v:'' } }, scales:{ y:{ beginAtZero:true } } },
           plugins: [ChartDataLabels]
         });
       }
-
       function renderBandBarChart(monthlySums) {
         const ctx = document.getElementById('bandBarChart')?.getContext('2d');
         if (!ctx) return;
         if (bandBarChart) bandBarChart.destroy();
-        const data = BAND_TYPES.map(b => monthlySums[b] || 0);
-        if (data.reduce((a, b) => a + b, 0) === 0) {
-          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-          return;
-        }
+        const data = BAND_TYPES.map(b=>monthlySums[b]||0);
+        if (data.reduce((a,b)=>a+b,0)===0) { ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); return; }
         bandBarChart = new Chart(ctx, {
           type: 'bar',
-          data: {
-            labels: BAND_TYPES,
-            datasets: [{
-              label: 'Oylik tikuv (dona)',
-              data,
-              backgroundColor: 'rgba(99,102,241,0.7)',
-              borderRadius: 8
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: {
-              datalabels: {
-                anchor: 'end',
-                align: 'top',
-                offset: 4,
-                backgroundColor: '#000000aa',
-                borderRadius: 8,
-                padding: 4,
-                color: 'white',
-                font: {
-                  size: 10
-                },
-                formatter: v => v > 0 ? v : ''
-              }
-            },
-            scales: {
-              y: {
-                beginAtZero: true
-              }
-            }
-          },
+          data: { labels: BAND_TYPES, datasets: [{ label:'Oylik tikuv (dona)', data, backgroundColor:'rgba(99,102,241,0.7)', borderRadius:8 }] },
+          options: { responsive:true, plugins:{ datalabels:{ anchor:'end', align:'top', offset:4, backgroundColor:'#000000aa', borderRadius:8, padding:4, color:'white', font:{size:10}, formatter:v=>v>0?v:'' } }, scales:{ y:{ beginAtZero:true } } },
           plugins: [ChartDataLabels]
         });
       }
-
       function renderRanking(monthlySums) {
         const container = document.getElementById('rankingContainer');
-        const entries = BAND_TYPES.map(t => [t, monthlySums[t] || 0]).sort((a, b) => b[1] - a[1]);
-        const total = entries.reduce((s, [, v]) => s + v, 0);
-        if (!total) {
-          container.innerHTML = '<div class="text-center py-6 text-gray-400">📭 Maʼlumot yo\'q</div>';
-          return;
-        }
+        const entries = BAND_TYPES.map(t=>[t, monthlySums[t]||0]).sort((a,b)=>b[1]-a[1]);
+        const total = entries.reduce((s,[,v])=>s+v,0);
+        if (!total) { container.innerHTML = '<div class="text-center py-6 text-gray-400">📭 Maʼlumot yo\'q</div>'; return; }
         let html = '<table class="w-full text-sm"><thead><tr><th>#</th><th>Band</th><th class="text-right">Oylik</th></tr></thead><tbody>';
-        entries.forEach(([t, q], i) => html += `<tr class="border-b"><td class="py-2">${i + 1}</td><td class="py-2 font-semibold">${t}</td><td class="py-2 text-right font-bold text-indigo-600">${q}</td></tr>`);
-        html += `<tr class="border-t font-bold"><td colspan="2">Jami</td><td class="text-right">${total}</td></tr></tbody></table>`;
+        entries.forEach(([t,q],i)=>html+=`<tr class="border-b"><td class="py-2">${i+1}</td><td class="py-2 font-semibold">${t}</td><td class="py-2 text-right font-bold text-indigo-600">${q}</td></tr>`);
+        html+=`<tr class="border-t font-bold"><td colspan="2">Jami</td><td class="text-right">${total}</td></table></tbody><table>`;
         container.innerHTML = html;
       }
-
-      function renderExtraStats(ua, da) {
-        const c = document.getElementById('extraStatsContainer');
-        c.innerHTML = `<table class="w-full text-sm"><tr class="border-b"><td class="py-2">📦 Upakovka</td><td class="py-2 text-right font-bold">${ua}</td></tr><tr class="border-b"><td>🔥 Dazmol</td><td class="text-right font-bold">${da}</td></tr><tr class="border-t font-bold"><td>Jami</td><td class="text-right">${ua + da}</td></tr></table>`;
+      function renderExtraStats(ua,da) {
+        document.getElementById('extraStatsContainer').innerHTML = `<table class="w-full text-sm"><tr class="border-b"><td class="py-2">📦 Upakovka</td><td class="py-2 text-right font-bold">${ua}</td></tr><tr class="border-b"><td class="py-2">🔥 Dazmol</td><td class="text-right font-bold">${da}</td></tr><tr class="border-t font-bold"><td class="py-2">Jami</td><td class="text-right">${ua+da}</td></tr></table>`;
       }
-
       function renderMonthlyTable(incoming, expenses) {
         const container = document.getElementById('monthlyTableContainer');
         try {
-          const {
-            months,
-            incomingTotal,
-            expenseTotal
-          } = (() => {
-            const now = new Date();
-            const months = [];
-            for (let i = 11; i >= 0; i--) {
-              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-              months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-            }
-            const incomingTotal = Object.fromEntries(months.map(m => [m, 0]));
-            const expenseTotal = Object.fromEntries(months.map(m => [m, 0]));
-            const inSeen = new Set();
-            for (const p of incoming || []) {
-              if (!p || !p.date || p.quantity === undefined) continue;
-              const pDate = new Date(p.date);
-              if (isNaN(pDate.getTime())) continue;
-              const mk = `${pDate.getFullYear()}-${String(pDate.getMonth() + 1).padStart(2, '0')}`;
-              const key = `${p._id || p.id}`;
-              if (incomingTotal.hasOwnProperty(mk) && !inSeen.has(key)) {
-                inSeen.add(key);
-                incomingTotal[mk] += parseInt(p.quantity) || 0;
-              }
-            }
-            const exSeen = new Set();
-            for (const e of expenses || []) {
-              if (!e || !e.date || e.quantity === undefined) continue;
-              const eDate = new Date(e.date);
-              if (isNaN(eDate.getTime())) continue;
-              const mk = `${eDate.getFullYear()}-${String(eDate.getMonth() + 1).padStart(2, '0')}`;
-              const key = `${e._id || e.id}`;
-              if (expenseTotal.hasOwnProperty(mk) && !exSeen.has(key)) {
-                exSeen.add(key);
-                expenseTotal[mk] += parseInt(e.quantity) || 0;
-              }
-            }
-            return {
-              months,
-              incomingTotal,
-              expenseTotal
-            };
-          })();
-          let hasData = false;
-          let html = '<table class="w-full text-sm"><thead><tr><th>Oy</th><th class="text-right">Kirim</th><th class="text-right">Chiqim</th><th class="text-right">Qoldiq</th></tr></thead><tbody>';
-          for (const m of months) {
-            const inQ = incomingTotal[m] || 0,
-              outQ = expenseTotal[m] || 0,
-              bal = inQ - outQ;
-            if (inQ || outQ) hasData = true;
-            html += `<tr><td class="py-1">${new Date(m.split('-')[0], parseInt(m.split('-')[1]) - 1).toLocaleString('uz', {
-              month: 'short',
-              year: 'numeric'
-            })}</td><td class="text-right">${inQ}</td><td class="text-right">${outQ}</td><td class="text-right ${bal < 0 ? 'negative-value' : ''}">${bal}</td></tr>`;
-          }
+          const now = new Date(); const months = [];
+          for (let i=11; i>=0; i--) { const d = new Date(now.getFullYear(), now.getMonth()-i,1); months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`); }
+          const incomingTotal = Object.fromEntries(months.map(m=>[m,0])); const expenseTotal = Object.fromEntries(months.map(m=>[m,0]));
+          const inSeen = new Set();
+          for (const p of incoming||[]) { if (!p||!p.date||p.quantity===undefined) continue; const pDate = new Date(p.date); if (isNaN(pDate.getTime())) continue; const mk = `${pDate.getFullYear()}-${String(pDate.getMonth()+1).padStart(2,'0')}`; const key = `${p._id||p.id}`; if (incomingTotal.hasOwnProperty(mk) && !inSeen.has(key)) { inSeen.add(key); incomingTotal[mk] += parseInt(p.quantity)||0; } }
+          const exSeen = new Set();
+          for (const e of expenses||[]) { if (!e||!e.date||e.quantity===undefined) continue; const eDate = new Date(e.date); if (isNaN(eDate.getTime())) continue; const mk = `${eDate.getFullYear()}-${String(eDate.getMonth()+1).padStart(2,'0')}`; const key = `${e._id||e.id}`; if (expenseTotal.hasOwnProperty(mk) && !exSeen.has(key)) { exSeen.add(key); expenseTotal[mk] += parseInt(e.quantity)||0; } }
+          let hasData = false; let html = '<table class="w-full text-sm"><thead><tr><th>Oy</th><th class="text-right">Kirim</th><th class="text-right">Chiqim</th><th class="text-right">Qoldiq</th></tr></thead><tbody>';
+          for (const m of months) { const inQ = incomingTotal[m]||0, outQ = expenseTotal[m]||0, bal = inQ - outQ; if (inQ||outQ) hasData=true; html += `<tr><td class="py-1">${new Date(m.split('-')[0], parseInt(m.split('-')[1])-1).toLocaleString('uz',{month:'short',year:'numeric'})}</td><td class="text-right">${inQ}</td><td class="text-right">${outQ}</td><td class="text-right ${bal<0?'negative-value':''}">${bal}</td></tr>`; }
           html += '</tbody></table>';
           container.innerHTML = hasData ? html : '<div class="text-center py-6 text-gray-400">📭 Maʼlumot yo\'q</div>';
-        } catch (e) {
-          container.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
+        } catch(e) { container.innerHTML = '<div class="text-red-500">Xatolik</div>'; }
       }
 
-      // Main refresh
+      // Asosiy yangilash
       let refreshPending = false;
-
       async function refreshAll() {
         if (refreshPending) return;
         refreshPending = true;
@@ -1215,380 +984,129 @@
         if (loader) loader.classList.remove('hidden');
         try {
           const dateKey = getSelectedDateKey();
-          const {
-            products,
-            incoming,
-            expenses,
-            staff,
-            attendance,
-            machines,
-            accessories
-          } = await fetchAllData();
+          const { products, incoming, expenses, staff, attendance, machines, accessories } = await fetchAllData();
           if (!products) return;
-          const monthKey = dateKey.slice(0, 7);
+          const monthKey = dateKey.slice(0,7);
           const monthlyTotal = getMonthlyTotals(products, monthKey);
           const dailyTotals = getDailyTotals(products, dateKey);
-          const dailyTotal = BAND_TYPES.reduce((sum, type) => sum + (dailyTotals[type] || 0), 0);
+          const dailyTotal = BAND_TYPES.reduce((sum,type)=>sum+(dailyTotals[type]||0),0);
           const monthlyBandTotals = getCurrentMonthBandTotals(products, monthKey);
           const extra = getCurrentMonthExtraStats(products, monthKey);
-          const setEl = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val;
-          };
-          setEl('totalSumStat', monthlyTotal);
-          setEl('dailySumStat', dailyTotal);
-          setEl('dazmolTotal', extra.dazmolAll);
-          setEl('upakovkaTotal', extra.upakovkaAll);
-          let topBand = null,
-            topQty = 0;
-          for (const [band, qty] of Object.entries(monthlyBandTotals))
-            if (qty > topQty) {
-              topQty = qty;
-              topBand = band;
-            }
-          setEl('topBandName', topBand || '—');
-          setEl('topBandQty', topQty);
-          const {
-            available,
-            todayExpense
-          } = computeWarehouseStats(incoming, expenses);
+          const setEl = (id,val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+          setEl('totalSumStat', monthlyTotal); setEl('dailySumStat', dailyTotal);
+          setEl('dazmolTotal', extra.dazmolAll); setEl('upakovkaTotal', extra.upakovkaAll);
+          let topBand = null, topQty = 0;
+          for (const [band,qty] of Object.entries(monthlyBandTotals)) if (qty > topQty) { topQty = qty; topBand = band; }
+          setEl('topBandName', topBand||'—'); setEl('topBandQty', topQty);
+          const { available, todayExpense } = computeWarehouseStats(incoming, expenses);
           const availSpan = document.getElementById('availableWorkStat');
-          if (availSpan) {
-            availSpan.innerText = available;
-            if (available < 0) availSpan.classList.add('negative-value');
-            else availSpan.classList.remove('negative-value');
-          }
-          setEl('dailyExpenseStat', todayExpense);
-          setEl('accessoriesCountStat', accessories.length);
+          if (availSpan) { availSpan.innerText = available; if (available<0) availSpan.classList.add('negative-value'); else availSpan.classList.remove('negative-value'); }
+          setEl('dailyExpenseStat', todayExpense); setEl('accessoriesCountStat', accessories.length);
           await renderMainChartWithPlan(products, dateKey);
           renderYearlyChart(products);
           renderBandBarChart(monthlyBandTotals);
           renderRanking(monthlyBandTotals);
           renderExtraStats(extra.upakovkaAll, extra.dazmolAll);
           renderMonthlyTable(incoming, expenses);
-          document.querySelectorAll('.stats-card').forEach(card => {
-            card.classList.add('refresh-pulse');
-            setTimeout(() => card.classList.remove('refresh-pulse'), 500);
-          });
-        } catch (err) {
-          console.error(err);
-        } finally {
-          if (loader) loader.classList.add('hidden');
-          refreshPending = false;
-        }
+          await loadMonthlyPlanVsActual();
+          document.querySelectorAll('.stats-card').forEach(card => { card.classList.add('refresh-pulse'); setTimeout(()=>card.classList.remove('refresh-pulse'),500); });
+        } catch(err) { console.error(err); } finally { if (loader) loader.classList.add('hidden'); refreshPending = false; }
       }
 
-      // Fullscreen FIXED version with stats and marquee
+      // Fullscreen funksiyalari (qisqartirilmagan, to'liq)
       async function updateFullscreenStats(statsContainer) {
         try {
           const data = await fetchAllData();
           if (!data) return;
           const dailyTotals = getDailyTotals(data.products, getTodayKey());
-          const todayTotal = BAND_TYPES.reduce((s, t) => s + (dailyTotals[t] || 0), 0);
-          const {
-            present,
-            absent,
-            late,
-            totalStaff
-          } = (() => {
-            const today = getTodayKey();
-            const todayAtt = (data.attendance || []).filter(a => a && a.date === today);
-            const present = todayAtt.filter(a => a && a.checkIn).length;
-            const late = todayAtt.filter(a => a && a.checkIn && a.lateMinutes > 0).length;
-            return {
-              present,
-              absent: (data.staff?.length || 0) - present,
-              late,
-              totalStaff: data.staff?.length || 0
-            };
-          })();
-          const {
-            available,
-            todayExpense
-          } = computeWarehouseStats(data.incoming, data.expenses);
+          const todayTotal = BAND_TYPES.reduce((s,t)=>s+(dailyTotals[t]||0),0);
+          const today = getTodayKey();
+          const todayAtt = (data.attendance||[]).filter(a=>a&&a.date===today);
+          const present = todayAtt.filter(a=>a&&a.checkIn).length;
+          const late = todayAtt.filter(a=>a&&a.checkIn&&a.lateMinutes>0).length;
+          const totalStaff = data.staff?.length||0;
+          const { available, todayExpense } = computeWarehouseStats(data.incoming, data.expenses);
           const cards = statsContainer.querySelectorAll('.stats-card');
-          if (cards.length === 3) {
-            cards[0].innerHTML = `<h3>📊 Kunlik ishlar</h3><div class="stat-row"><span class="stat-label">Bugungi jami:</span><span class="stat-value">${todayTotal}</span></div><div class="stat-row"><span class="stat-label">🔥 Dazmol:</span><span class="stat-value">${dailyTotals['Dazmol'] || 0}</span></div><div class="stat-row"><span class="stat-label">📦 Upakovka:</span><span class="stat-value">${dailyTotals['Upakovka'] || 0}</span></div><div class="stat-row"><span class="stat-label">🖨️ Mashinalar:</span><span class="stat-value">${data.machines?.length || 0}</span></div>`;
-            cards[1].innerHTML = `<h3>👥 Davomat</h3><div class="stat-row"><span class="stat-label">Jami:</span><span class="stat-value">${totalStaff}</span></div><div class="stat-row"><span class="stat-label">Kelganlar:</span><span class="stat-value">${present}</span></div><div class="stat-row"><span class="stat-label">Kelmaganlar:</span><span class="stat-value">${absent}</span></div><div class="stat-row"><span class="stat-label">⏰ Kech:</span><span class="stat-value">${late}</span></div>`;
-            cards[2].innerHTML = `<h3>📦 Ombor</h3><div class="stat-row clickable" onclick="window.showIncomingModal?.()"><span class="stat-label">Mavjud:</span><span class="stat-value ${available < 0 ? 'negative-value' : ''}">${available}</span></div><div class="stat-row clickable" onclick="window.showExpenseModal?.()"><span class="stat-label">Kunlik chiqim:</span><span class="stat-value">${todayExpense}</span></div><div class="stat-row clickable" onclick="window.showAccessoriesModal?.()"><span class="stat-label">🔧 Aksessuarlar:</span><span class="stat-value">${data.accessories?.length || 0} tur</span></div>`;
+          if (cards.length===3) {
+            cards[0].innerHTML = `<h3>📊 Kunlik ishlar</h3><div class="stat-row"><span class="stat-label">Bugungi jami:</span><span class="stat-value">${todayTotal}</span></div><div class="stat-row"><span class="stat-label">🔥 Dazmol:</span><span class="stat-value">${dailyTotals['Dazmol']||0}</span></div><div class="stat-row"><span class="stat-label">📦 Upakovka:</span><span class="stat-value">${dailyTotals['Upakovka']||0}</span></div><div class="stat-row"><span class="stat-label">🖨️ Mashinalar:</span><span class="stat-value">${data.machines?.length||0}</span></div>`;
+            cards[1].innerHTML = `<h3>👥 Davomat</h3><div class="stat-row"><span class="stat-label">Jami:</span><span class="stat-value">${totalStaff}</span></div><div class="stat-row"><span class="stat-label">Kelganlar:</span><span class="stat-value">${present}</span></div><div class="stat-row"><span class="stat-label">Kelmaganlar:</span><span class="stat-value">${totalStaff-present}</span></div><div class="stat-row"><span class="stat-label">⏰ Kech:</span><span class="stat-value">${late}</span></div>`;
+            cards[2].innerHTML = `<h3>📦 Ombor</h3><div class="stat-row clickable" onclick="window.showIncomingModal?.()"><span class="stat-label">Mavjud:</span><span class="stat-value ${available<0?'negative-value':''}">${available}</span></div><div class="stat-row clickable" onclick="window.showExpenseModal?.()"><span class="stat-label">Kunlik chiqim:</span><span class="stat-value">${todayExpense}</span></div><div class="stat-row clickable" onclick="window.showAccessoriesModal?.()"><span class="stat-label">🔧 Aksessuarlar:</span><span class="stat-value">${data.accessories?.length||0} tur</span></div>`;
           }
-        } catch (err) {
-          console.error('Fullscreen stats error:', err);
-        }
+        } catch(err) { console.error('Fullscreen stats error:', err); }
       }
-
       async function showFullscreenChart(chartInstance, chartCanvas) {
         if (currentFullscreenOverlay) return;
         if (!chartInstance || !chartCanvas) return;
         const overlay = document.createElement('div');
         overlay.className = 'fullscreen-overlay';
-        // background video (optional)
         const video = document.createElement('video');
-        video.id = 'bgVideo';
-        video.autoplay = true;
-        video.loop = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'auto';
+        video.id = 'bgVideo'; video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true; video.preload = 'auto';
         video.src = '/videos/bg.mp4';
-        video.onerror = () => {
-          overlay.style.background = 'radial-gradient(ellipse at 30% 40%, #0a2f4a, #031e2f)';
-        };
+        video.onerror = () => { overlay.style.background = 'radial-gradient(ellipse at 30% 40%, #0a2f4a, #031e2f)'; };
         overlay.appendChild(video);
-        const statsContainer = document.createElement('div');
-        statsContainer.className = 'stats-cards-container';
-        for (let i = 0; i < 3; i++) {
-          const card = document.createElement('div');
-          card.className = 'stats-card';
-          card.innerHTML = '<h3>📊 Yuklanmoqda...</h3>';
-          statsContainer.appendChild(card);
-        }
-        const chartWrapper = document.createElement('div');
-        chartWrapper.className = 'chart-wrapper';
+        const statsContainer = document.createElement('div'); statsContainer.className = 'stats-cards-container';
+        for (let i=0;i<3;i++) { const card = document.createElement('div'); card.className = 'stats-card'; card.innerHTML = '<h3>📊 Yuklanmoqda...</h3>'; statsContainer.appendChild(card); }
+        const chartWrapper = document.createElement('div'); chartWrapper.className = 'chart-wrapper';
         const originalParent = chartCanvas.parentNode;
         await updateFullscreenStats(statsContainer);
         chartWrapper.appendChild(chartCanvas);
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✖';
-        closeBtn.className = 'close-fullscreen';
-        closeBtn.onclick = () => document.exitFullscreen();
-        overlay.appendChild(closeBtn);
-        overlay.appendChild(statsContainer);
-        overlay.appendChild(chartWrapper);
-        const marqueeFooter = document.createElement('div');
-        marqueeFooter.className = 'marquee-footer';
+        const closeBtn = document.createElement('button'); closeBtn.innerHTML = '✖'; closeBtn.className = 'close-fullscreen'; closeBtn.onclick = () => document.exitFullscreen();
+        overlay.appendChild(closeBtn); overlay.appendChild(statsContainer); overlay.appendChild(chartWrapper);
+        const marqueeFooter = document.createElement('div'); marqueeFooter.className = 'marquee-footer';
         marqueeFooter.innerHTML = '<div class="marquee-text">✨ Created by <strong>Makhmudov</strong> ✨ Ombor statistikasi | Real-time data visualization ✨</div>';
-        document.body.appendChild(marqueeFooter);
-        document.body.appendChild(overlay);
-        currentFullscreenOverlay = {
-          overlay,
-          chartCanvas,
-          originalParent,
-          chartInstance,
-          statsContainer,
-          marqueeFooter
-        };
-        video.play().catch(e => console.warn('Video autoplay blocked', e));
+        document.body.appendChild(marqueeFooter); document.body.appendChild(overlay);
+        currentFullscreenOverlay = { overlay, chartCanvas, originalParent, chartInstance, statsContainer, marqueeFooter };
+        video.play().catch(e=>console.warn('Video autoplay blocked', e));
         chartInstance.options.maintainAspectRatio = false;
-        overlay.requestFullscreen().catch(err => console.error('Fullscreen error:', err)).then(() => {
-          setTimeout(() => {
-            chartInstance.resize();
-            chartInstance.update();
-          }, 150);
-        });
+        overlay.requestFullscreen().catch(err=>console.error('Fullscreen error:', err)).then(()=>{ setTimeout(()=>{ chartInstance.resize(); chartInstance.update(); },150); });
         const fsChangeHandler = () => {
           if (!document.fullscreenElement && currentFullscreenOverlay) {
-            const {
-              chartCanvas,
-              originalParent,
-              chartInstance,
-              overlay,
-              marqueeFooter
-            } = currentFullscreenOverlay;
-            originalParent.appendChild(chartCanvas);
-            overlay.remove();
-            if (marqueeFooter) marqueeFooter.remove();
-            if (chartInstance) {
-              chartInstance.destroy();
-              const ctx = chartCanvas.getContext('2d');
-              if (ctx) ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-              if (chartCanvas.id === 'quantityChart') {
-                chartCanvas.height = 500;
-                mainChart = null;
-                refreshAll();
-              } else if (chartCanvas.id === 'yearlyChart') {
-                chartCanvas.height = 300;
-                yearlyChart = null;
-                refreshAll();
-              }
-            }
-            currentFullscreenOverlay = null;
-            document.removeEventListener('fullscreenchange', fsChangeHandler);
-            window.removeEventListener('resize', resizeHandler);
-          } else if (document.fullscreenElement) {
-            setTimeout(() => {
-              if (currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) {
-                currentFullscreenOverlay.chartInstance.resize();
-                currentFullscreenOverlay.chartInstance.update();
-              }
-            }, 150);
-          }
+            const { chartCanvas, originalParent, chartInstance, overlay, marqueeFooter } = currentFullscreenOverlay;
+            originalParent.appendChild(chartCanvas); overlay.remove(); if (marqueeFooter) marqueeFooter.remove();
+            if (chartInstance) { chartInstance.destroy(); const ctx = chartCanvas.getContext('2d'); if (ctx) ctx.clearRect(0,0,chartCanvas.width,chartCanvas.height); if (chartCanvas.id === 'quantityChart') { chartCanvas.height = 500; mainChart = null; refreshAll(); } else if (chartCanvas.id === 'yearlyChart') { chartCanvas.height = 300; yearlyChart = null; refreshAll(); } }
+            currentFullscreenOverlay = null; document.removeEventListener('fullscreenchange', fsChangeHandler); window.removeEventListener('resize', resizeHandler);
+          } else if (document.fullscreenElement) { setTimeout(()=>{ if (currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) { currentFullscreenOverlay.chartInstance.resize(); currentFullscreenOverlay.chartInstance.update(); } },150); }
         };
-        const resizeHandler = () => {
-          if (document.fullscreenElement && currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) {
-            currentFullscreenOverlay.chartInstance.resize();
-            currentFullscreenOverlay.chartInstance.update();
-          }
-        };
-        document.addEventListener('fullscreenchange', fsChangeHandler);
-        window.addEventListener('resize', resizeHandler);
+        const resizeHandler = () => { if (document.fullscreenElement && currentFullscreenOverlay && currentFullscreenOverlay.chartInstance) { currentFullscreenOverlay.chartInstance.resize(); currentFullscreenOverlay.chartInstance.update(); } };
+        document.addEventListener('fullscreenchange', fsChangeHandler); window.addEventListener('resize', resizeHandler);
       }
 
-      // Modal handlers (simplified but functional)
-      async function showIncomingModal() {
-        const modal = document.getElementById('incomingModal'),
-          c = document.getElementById('incomingModalList');
-        modal.classList.remove('hidden');
-        c.innerHTML = 'Yuklanmoqda...';
-        try {
-          const items = await fetchAPI('/api/incoming', null);
-          if (!items.length) {
-            c.innerHTML = '<div class="text-gray-400">Kirim yo\'q</div>';
-            return;
-          }
-          let html = '';
-          const groups = {};
-          items.forEach(i => {
-            const m = i.modelName || 'Noma\'lum';
-            if (!groups[m]) groups[m] = [];
-            groups[m].push(i);
-          });
-          for (const [mn, its] of Object.entries(groups)) {
-            html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Miqdor</th><th>Sana</th></tr>`;
-            its.forEach(i => html += `<tr><td>${escapeHtml(i.variant || '—')}</td><td>${escapeHtml(i.orderNumber || '—')}</td><td class="text-right">${i.quantity}</td><td>${new Date(i.date).toLocaleDateString()}</td></tr>`);
-            html += `</table></div>`;
-          }
-          c.innerHTML = html;
-        } catch (e) {
-          c.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
-      }
-
-      async function showExpenseModal() {
-        const modal = document.getElementById('expenseModal'),
-          c = document.getElementById('expenseModalList');
-        modal.classList.remove('hidden');
-        c.innerHTML = 'Yuklanmoqda...';
-        try {
-          const all = await fetchAPI('/api/expenses', null);
-          const today = getTodayKey();
-          const items = all.filter(e => new Date(e.date).toISOString().split('T')[0] === today);
-          if (!items.length) {
-            c.innerHTML = '<div class="text-gray-400">Bugungi chiqim yo\'q</div>';
-            return;
-          }
-          let html = '';
-          const groups = {};
-          items.forEach(i => {
-            const m = i.modelName || 'Noma\'lum';
-            if (!groups[m]) groups[m] = [];
-            groups[m].push(i);
-          });
-          for (const [mn, its] of Object.entries(groups)) {
-            html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Band</th><th>Miqdor</th></tr>`;
-            its.forEach(i => html += `<tr><td>${escapeHtml(i.variant || '—')}</td><td>${escapeHtml(i.orderNumber || '—')}</td><td>${escapeHtml(i.band || '—')}</td><td class="text-right">${i.quantity}</td></tr>`);
-            html += `</table></div>`;
-          }
-          c.innerHTML = html;
-        } catch (e) {
-          c.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
-      }
-
-      async function showAccessoriesModal() {
-        const modal = document.getElementById('accessoriesModal'),
-          c = document.getElementById('modalAccessoriesList');
-        modal.classList.remove('hidden');
-        c.innerHTML = 'Yuklanmoqda...';
-        try {
-          const items = await fetchAPI('/api/accessories', null);
-          if (!items.length) {
-            c.innerHTML = '<div class="text-gray-400">Aksessuar yo\'q</div>';
-            return;
-          }
-          let html = '<table class="w-full text-sm"><tr><th>Nomi</th><th>Kod</th><th>Soni</th><th>Kg</th><th>Metr</th></tr>';
-          items.forEach(i => html += `<tr><td>${escapeHtml(i.productName)}</td><td>${escapeHtml(i.code || '—')}</td><td class="text-right">${i.quantity ?? '—'}</td><td class="text-right">${i.kg ?? '—'}</td><td class="text-right">${i.meters ?? '—'}</td></tr>`);
-          html += '</table>';
-          c.innerHTML = html;
-        } catch (e) {
-          c.innerHTML = '<div class="text-red-500">Xatolik</div>';
-        }
-      }
-
-      // Notes
-      function loadNotes() {
-        const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-        if (savedNotesDiv) savedNotesDiv.innerHTML = notes.map((n, i) => `<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between"><span>${escapeHtml(n.text)}</span><small>${new Date(n.date).toLocaleString()}</small><button onclick="window.deleteNote(${i})" class="text-red-500">✖</button></div>`).join('');
-      }
-
-      function saveNote(text) {
-        const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-        notes.push({
-          text,
-          date: new Date().toISOString()
-        });
-        localStorage.setItem('grafikNotes', JSON.stringify(notes));
-        loadNotes();
-      }
-      window.deleteNote = (i) => {
-        const notes = JSON.parse(localStorage.getItem('grafikNotes') || '[]');
-        notes.splice(i, 1);
-        localStorage.setItem('grafikNotes', JSON.stringify(notes));
-        loadNotes();
-      };
+      // Modal va eslatma funksiyalari (to'liq)
+      async function showIncomingModal() { const modal = document.getElementById('incomingModal'), c = document.getElementById('incomingModalList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const items = await fetchAPI('/api/incoming', null); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Kirim yo\'q</div>'; return; } let html = ''; const groups = {}; items.forEach(i => { const m = i.modelName || 'Noma\'lum'; if (!groups[m]) groups[m] = []; groups[m].push(i); }); for (const [mn, its] of Object.entries(groups)) { html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Miqdor</th><th>Sana</th></table>`; its.forEach(i => html += `<tr><td>${escapeHtml(i.variant||'—')}</td><td>${escapeHtml(i.orderNumber||'—')}</td><td class="text-right">${i.quantity}</td><td>${new Date(i.date).toLocaleDateString()}</td></tr>`); html += `</table></div>`; } c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
+      async function showExpenseModal() { const modal = document.getElementById('expenseModal'), c = document.getElementById('expenseModalList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const all = await fetchAPI('/api/expenses', null); const today = getTodayKey(); const items = all.filter(e => new Date(e.date).toISOString().split('T')[0] === today); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Bugungi chiqim yo\'q</div>'; return; } let html = ''; const groups = {}; items.forEach(i => { const m = i.modelName || 'Noma\'lum'; if (!groups[m]) groups[m] = []; groups[m].push(i); }); for (const [mn, its] of Object.entries(groups)) { html += `<div class="mb-4"><h4 class="font-bold">📦 ${escapeHtml(mn)}</h4><table class="w-full text-sm"><tr><th>Variant</th><th>Zakaz</th><th>Band</th><th>Miqdor</th></tr>`; its.forEach(i => html += `<tr><td>${escapeHtml(i.variant||'—')}</td><td>${escapeHtml(i.orderNumber||'—')}</td><td>${escapeHtml(i.band||'—')}</td><td class="text-right">${i.quantity}</td></tr>`); html += `</table></div>`; } c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
+      async function showAccessoriesModal() { const modal = document.getElementById('accessoriesModal'), c = document.getElementById('modalAccessoriesList'); modal.classList.remove('hidden'); c.innerHTML = 'Yuklanmoqda...'; try { const items = await fetchAPI('/api/accessories', null); if (!items.length) { c.innerHTML = '<div class="text-gray-400">Aksessuar yo\'q</div>'; return; } let html = '<table class="w-full text-sm"><tr><th>Nomi</th><th>Kod</th><th>Soni</th><th>Kg</th><th>Metr</th></tr>'; items.forEach(i => html += `<tr><td>${escapeHtml(i.productName)}</td><td>${escapeHtml(i.code||'—')}</td><td class="text-right">${i.quantity??'—'}</td><td class="text-right">${i.kg??'—'}</td><td class="text-right">${i.meters??'—'}</td></tr>`); html += '</table>'; c.innerHTML = html; } catch(e) { c.innerHTML = '<div class="text-red-500">Xatolik</div>'; } }
+      function loadNotes() { const notes = JSON.parse(localStorage.getItem('grafikNotes')||'[]'); if (savedNotesDiv) savedNotesDiv.innerHTML = notes.map((n,i)=>`<div class="bg-yellow-50 p-2 rounded mb-2 flex justify-between"><span>${escapeHtml(n.text)}</span><small>${new Date(n.date).toLocaleString()}</small><button onclick="window.deleteNote(${i})" class="text-red-500">✖</button></div>`).join(''); }
+      function saveNote(text) { const notes = JSON.parse(localStorage.getItem('grafikNotes')||'[]'); notes.push({ text, date: new Date().toISOString() }); localStorage.setItem('grafikNotes', JSON.stringify(notes)); loadNotes(); }
+      window.deleteNote = (i) => { const notes = JSON.parse(localStorage.getItem('grafikNotes')||'[]'); notes.splice(i,1); localStorage.setItem('grafikNotes', JSON.stringify(notes)); loadNotes(); };
 
       function bindEvents() {
-        if (dateInput) dateInput.addEventListener('change', () => {
-          if (debounceTimer) clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(() => refreshAll(), 300);
-        });
-        if (resetDateBtn) resetDateBtn.addEventListener('click', () => {
-          if (dateInput) dateInput.value = getTodayKey();
-          refreshAll();
-        });
+        if (dateInput) dateInput.addEventListener('change', () => { if (debounceTimer) clearTimeout(debounceTimer); debounceTimer = setTimeout(()=>refreshAll(),300); });
+        if (resetDateBtn) resetDateBtn.addEventListener('click', () => { if (dateInput) dateInput.value = getTodayKey(); refreshAll(); });
         if (aiSummaryBtn) aiSummaryBtn.addEventListener('click', () => showToast('AI xulosasi backend bilan integratsiya qilinmagan', 2000));
-        if (noteBtn) noteBtn.addEventListener('click', () => {
-          if (noteModal) noteModal.classList.remove('hidden');
-          loadNotes();
-        });
-        if (saveNoteBtn) saveNoteBtn.addEventListener('click', () => {
-          const t = noteText.value.trim();
-          if (t) {
-            saveNote(t);
-            noteText.value = '';
-          }
-        });
-        if (clearNoteBtn) clearNoteBtn.addEventListener('click', () => {
-          localStorage.removeItem('grafikNotes');
-          loadNotes();
-        });
-        document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-modal');
-          if (id) closeModal(id);
-        }));
-        window.addEventListener('click', e => {
-          if (e.target.classList.contains('modal-overlay')) e.target.classList.add('hidden');
-        });
+        if (noteBtn) noteBtn.addEventListener('click', () => { if (noteModal) noteModal.classList.remove('hidden'); loadNotes(); });
+        if (saveNoteBtn) saveNoteBtn.addEventListener('click', () => { const t = noteText.value.trim(); if (t) { saveNote(t); noteText.value = ''; } });
+        if (clearNoteBtn) clearNoteBtn.addEventListener('click', () => { localStorage.removeItem('grafikNotes'); loadNotes(); });
+        document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', () => { const id = btn.getAttribute('data-modal'); if (id) closeModal(id); }));
+        window.addEventListener('click', e => { if (e.target.classList.contains('modal-overlay')) e.target.classList.add('hidden'); });
         document.getElementById('availableWorkRow')?.addEventListener('click', showIncomingModal);
         document.getElementById('dailyExpenseRow')?.addEventListener('click', showExpenseModal);
         document.getElementById('accessoriesRow')?.addEventListener('click', showAccessoriesModal);
         const mainFullBtn = document.getElementById('fullscreenMainBtn');
         const yearlyFullBtn = document.getElementById('fullscreenYearlyBtn');
-        if (mainFullBtn) mainFullBtn.addEventListener('click', () => {
-          if (mainChart) showFullscreenChart(mainChart, document.getElementById('quantityChart'));
-        });
-        if (yearlyFullBtn) yearlyFullBtn.addEventListener('click', () => {
-          if (yearlyChart) showFullscreenChart(yearlyChart, document.getElementById('yearlyChart'));
-        });
-        if (monthPicker) {
-          const now = new Date();
-          monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-          monthPicker.addEventListener('change', loadMonthlyPlanSummary);
-        }
+        if (mainFullBtn) mainFullBtn.addEventListener('click', () => { if (mainChart) showFullscreenChart(mainChart, document.getElementById('quantityChart')); });
+        if (yearlyFullBtn) yearlyFullBtn.addEventListener('click', () => { if (yearlyChart) showFullscreenChart(yearlyChart, document.getElementById('yearlyChart')); });
+        if (monthPicker) { const now = new Date(); monthPicker.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; monthPicker.addEventListener('change', () => { loadMonthlyPlanSummary(); loadMonthlyPlanVsActual(); }); }
+        if (refreshMonthBtn) refreshMonthBtn.addEventListener('click', loadMonthlyPlanVsActual);
       }
 
       let debounceTimer = null;
-
       async function init() {
         bindEvents();
         if (dateInput) dateInput.value = getTodayKey();
         await refreshAll();
         if (monthPicker) await loadMonthlyPlanSummary();
         setInterval(refreshAll, 30000);
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+        const now = new Date(); const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
         setTimeout(() => location.reload(), tomorrow.getTime() - now.getTime());
       }
       init();
