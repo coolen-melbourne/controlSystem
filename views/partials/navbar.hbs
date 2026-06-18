@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js" integrity="sha512-iuqkISYrA9A2qZcXa/Ef25FOF6Jy6p8ChyrnTKbC2wQd75d34bdD+TJ+38t8SIHh7fYMSYy9YrC8EtVxUCyrFg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <title>BestTex Admin</title>
     <style>
-        /* Loader animatsiyalari butunlay olib tashlandi */
+      
         
         .navbar {
             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%);
@@ -303,14 +303,14 @@
             setTimeout(() => playSound(5), afternoon - now);
         }
 
-        // 17:55 — ish tugashiga 5 daqiqa qoldi (15 marta)
-        const preEvening = new Date(today + ' 18:10:00');
+        //  (11 marta)
+        const preEvening = new Date(today + ' 18:08:00');
         if (now < preEvening) {
             setTimeout(() => playSound(1), preEvening - now);
         }
 
-        // 18:00 — ish tugadi (5 marta)
-        const evening = new Date(today + ' 18:00:00');
+        // 18:05 — ish tugadi (5 marta)
+        const evening = new Date(today + ' 18:05:00');
         if (now < evening) {
             setTimeout(() => playSound(5), evening - now);
         }
